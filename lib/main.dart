@@ -1,15 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 void main() {
   runApp(MyApp());
 }
 
-Image testImg = Image.asset('assets/avatars/test.jpg');
+Image testImg = Image.asset('assets/avatars/test.jpg'); //remove
 String username = "dertik";
 
 const MaterialColor color1 = Colors.lightBlue;
 const Color color2 = Colors.white;
 //const MaterialColor color2 = Colors.blue;
+
+Route<dynamic> generateRoute(RouteSettings settings) {
+  final args = settings.arguments;
+
+  switch (settings.name) {
+    case '/':
+      return MaterialPageRoute(builder: (_) => SplashScreen());
+    case '/home':
+      return MaterialPageRoute(
+        builder: (_) => HomePage(),
+      );
+    case '/login':
+      return MaterialPageRoute(
+        builder: (_) => HomePage(),
+      );
+
+    default:
+      return MaterialPageRoute(builder: (_) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Error'),
+          ),
+          body: Center(
+            child: Text('ERROR'),
+          ),
+        );
+      });
+  }
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -21,21 +51,22 @@ class MyApp extends StatelessWidget {
         primarySwatch: color1,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(),
+      initialRoute: '/',
+      onGenerateRoute: generateRoute,
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key}) : super(key: key);
+class HomePage extends StatefulWidget {
+  HomePage({Key key}) : super(key: key);
 
   //final String title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _HomePageState createState() => _HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -191,4 +222,69 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
   */
+}
+
+class SplashScreen extends StatefulWidget {
+  SplashScreen({Key key}) : super(key: key);
+
+  @override
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  Widget build(BuildContext context) {
+    ((int time) async {
+      await Future.delayed(
+        Duration(seconds: time),
+        () {
+          Navigator.of(context).pushNamed('/home');
+        },
+      );
+    })(4);
+    return Scaffold(
+      backgroundColor: color2,
+      body: Column(
+        children: [
+          Spacer(),
+          Image.asset('assets/icons/high-res.png', width: 200),
+          Padding(
+            padding: EdgeInsets.only(top: 25),
+            child: Text(
+              "Flango",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 30,
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(
+              top: 5,
+              left: 15,
+              right: 15,
+            ),
+            child: Text(
+              "Language on the Go! \nFlashcards Based Language Learning",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ),
+          Spacer(),
+          Container(
+            height: 100,
+            child: SpinKitSquareCircle(
+              color: color1[200],
+              size: 80.0,
+            ),
+          ),
+          Spacer(),
+        ],
+      ),
+    );
+  }
 }
