@@ -1,18 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
+
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:connectivity/connectivity.dart';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+// ignore: unused_import
+import 'package:firebase_performance/firebase_performance.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+
+FirebaseAnalytics analytics;
 
 void main() {
   runApp(MyApp());
 }
-
-Image testImg = Image.asset('assets/avatars/test.jpg'); //remove
-String username = "dertik";
 
 const MaterialColor color1 = Colors.lightBlue;
 const Color color2 = Colors.white;
 //const MaterialColor color2 = Colors.blue;
 
 Route<dynamic> generateRoute(RouteSettings settings) {
+  // ignore: unused_local_variable
   final args = settings.arguments;
 
   switch (settings.name) {
@@ -60,8 +70,6 @@ class MyApp extends StatelessWidget {
 class HomePage extends StatefulWidget {
   HomePage({Key key}) : super(key: key);
 
-  //final String title;
-
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -69,23 +77,84 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
+    Connectivity().onConnectivityChanged.listen(
+      (ConnectivityResult result) async {
+        Future<bool> internetLost() async {
+          return !((await (Connectivity().checkConnectivity())) ==
+                  (await (Connectivity().checkConnectivity()))) ||
+              ((await (Connectivity().checkConnectivity())) ==
+                  ConnectivityResult.none);
+        }
+
+        if (await internetLost()) {
+          () async {
+            while (await internetLost()) {
+              await Future.delayed(
+                Duration(milliseconds: 1300),
+                () async {
+                  await showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("No Internet Conection"),
+                        content: Text(
+                            "An internet connection is required to use Flango."),
+                        actions: <Widget>[
+                          FlatButton(
+                            child: Text("Retry"),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              );
+            }
+          }();
+        }
+      },
+    );
     return DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Flango'),
+          title: Container(
+            width: double.infinity,
+            color: Colors.transparent,
+            child: Center(
+              child: Column(
+                children: [
+                  Text(
+                    "Flango",
+                    style: TextStyle(fontSize: 30),
+                  ),
+                ],
+              ),
+            ),
+          ),
           backgroundColor: color1[200],
         ),
         bottomNavigationBar: Container(
           color: color1[200],
           padding: EdgeInsets.only(
-            left: 9,
-            right: 9,
-            top: 7,
-            bottom: 7,
+            left: 10,
+            right: 10,
+            top: 8,
+            bottom: 8,
           ),
           child: TabBar(
             indicator: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x19000000),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                )
+              ],
               border: Border.all(
                 color: Colors.transparent,
                 width: 4,
@@ -113,115 +182,31 @@ class _HomePageState extends State<HomePage> {
         ),
         body: TabBarView(
           children: [
-            Icon(Icons.directions_car),
+            Icon(Icons.directions_car_sharp),
             Icon(Icons.directions_transit),
-            Icon(Icons.directions_bike),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /*
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('My Sets'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '5',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              child: Column(
-                children: [
-                  Spacer(),
-                  Row(
-                    children: <Widget>[
-                      CircleAvatar(
-                        backgroundImage: testImg.image,
-                        radius: 35.0,
-                      ),
-                      Spacer(),
-                      FloatingActionButton(
-                        heroTag: "btn1",
-                        child: Icon(Icons.logout),
-                        //width: 100,
-                        onPressed: () => {},
-                      ),
-                    ],
-                  ),
-                  Spacer(),
-                  Container(
-                    margin: EdgeInsets.only(left: 5),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return Container(
+                  height: constraints.maxHeight,
+                  width: constraints.maxWidth,
+                  child: Center(
                     child: Column(
-                      children: <Widget>[
-                        Text(
-                          username,
-                          style: TextStyle(fontSize: 20),
-                        ),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(Icons.directions_bike),
+                        FlatButton(onPressed: null, child: Text("Sign Out"))
                       ],
-                      crossAxisAlignment: CrossAxisAlignment.start,
                     ),
                   ),
-                ],
-                crossAxisAlignment: CrossAxisAlignment.start,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.topic),
-              title: Text('My Sets'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.language),
-              //leading: Icon(Icons.supervised_user_circle),
-              title: Text('Find Sets'),
-              onTap: () {
-                // go to /explore
-                Navigator.of(context).pushNamed('/explore');
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.settings),
-              title: Text('Settings'),
-              onTap: () {
-                // go to /settings
-                Navigator.of(context).pushNamed('/settings');
+                );
               },
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'UN1',
-        onPressed: null,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ),
     );
   }
-  */
 }
 
 class SplashScreen extends StatefulWidget {
@@ -234,56 +219,192 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
-    ((int time) async {
-      await Future.delayed(
-        Duration(seconds: time),
-        () {
-          Navigator.of(context).pushNamed('/home');
-        },
-      );
-    })(4);
-    return Scaffold(
-      backgroundColor: color2,
-      body: Column(
-        children: [
-          Spacer(),
-          Image.asset('assets/icons/high-res.png', width: 200),
-          Padding(
-            padding: EdgeInsets.only(top: 25),
-            child: Text(
-              "Flango",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 30,
+    ((int delayTime) async {
+      bool everythingWorking;
+      while (!(everythingWorking ?? false)) {
+        everythingWorking = true;
+        await Future.delayed(
+          Duration(seconds: delayTime),
+          () async {
+            await Connectivity().checkConnectivity().then(
+              (value) async {
+                if (value == ConnectivityResult.none) {
+                  everythingWorking = false;
+                  await showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("No Internet Conection"),
+                        content: Text(
+                            "An internet connection is required to use Flango."),
+                        actions: <Widget>[
+                          FlatButton(
+                            child: Text("Retry"),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                } else {
+                  await Firebase.initializeApp().then(
+                    (value) async {
+                      analytics = FirebaseAnalytics();
+                      if (kDebugMode) {
+                        await FirebaseCrashlytics.instance
+                            .setCrashlyticsCollectionEnabled(false)
+                            .then(
+                          (value) {
+                            FlutterError.onError =
+                                FirebaseCrashlytics.instance.recordFlutterError;
+                            Navigator.of(context).pushReplacementNamed('/home');
+                          },
+                          onError: (error) async {
+                            print(error);
+                            everythingWorking = false;
+                            await showDialog(
+                              context: context,
+                              barrierDismissible: true,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text("Crashlytics Error"),
+                                  content: Text("An error occured"),
+                                  actions: <Widget>[
+                                    FlatButton(
+                                      child: Text("Retry"),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        );
+                      } else {
+                        await FirebaseCrashlytics.instance
+                            .setCrashlyticsCollectionEnabled(true)
+                            .then(
+                          (value) {
+                            FlutterError.onError =
+                                FirebaseCrashlytics.instance.recordFlutterError;
+                            Navigator.of(context).pushReplacementNamed('/home');
+                          },
+                          onError: (error) async {
+                            everythingWorking = false;
+                            await showDialog(
+                              context: context,
+                              barrierDismissible: true,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text("Crashlytics Error"),
+                                  content: Text("An error occured"),
+                                  actions: <Widget>[
+                                    FlatButton(
+                                      child: Text("Retry"),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        );
+                      }
+                    },
+                    onError: (error) async {
+                      print(error);
+                      everythingWorking = false;
+                      await showDialog(
+                        context: context,
+                        barrierDismissible: true,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text("Initialization Error"),
+                            content: Text("Error with Initialization"),
+                            actions: <Widget>[
+                              FlatButton(
+                                child: Text("Retry"),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  );
+                }
+              },
+            );
+          },
+        );
+      }
+    })(3);
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: color2,
+        body: Column(
+          children: [
+            Spacer(
+              flex: 2,
+            ),
+            Image.asset(
+              'assets/icons/high-res.png',
+              width:
+                  (MediaQuery.of(context).size.height * 0.25).ceil().toDouble(),
+            ),
+            Padding(
+              padding: EdgeInsets.only(top: 25),
+              child: Text(
+                "Flango",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 30,
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(
-              top: 5,
-              left: 15,
-              right: 15,
-            ),
-            child: Text(
-              "Language on the Go! \nFlashcards Based Language Learning",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
+            Padding(
+              padding: EdgeInsets.only(
+                top: 10,
+                left: 25,
+                right: 25,
+              ),
+              child: Text(
+                "Flashcards Based Language Learning",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
               ),
             ),
-          ),
-          Spacer(),
-          Container(
-            height: 100,
-            child: SpinKitSquareCircle(
-              color: color1[200],
-              size: 80.0,
+            Spacer(
+              flex: 3,
             ),
-          ),
-          Spacer(),
-        ],
+            Container(
+              height:
+                  (MediaQuery.of(context).size.height * 0.11).ceil().toDouble(),
+              child: SpinKitSquareCircle(
+                color: color1[200],
+                size: (MediaQuery.of(context).size.height * 0.09)
+                    .ceil()
+                    .toDouble(),
+              ),
+            ),
+            Spacer(
+              flex: 3,
+            ),
+          ],
+        ),
       ),
     );
   }
