@@ -1,9 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:flango/main.dart' show FlangoUser;
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   Stream<FlangoUser> get authStateChange {
     return _auth.authStateChanges().map(
@@ -32,6 +34,28 @@ class AuthService {
       return new FlangoUser(
         uid: (await _auth.createUserWithEmailAndPassword(
                 email: email, password: password))
+            .user
+            .uid,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future googleSignIn() async {
+    try {
+      final GoogleSignInAccount googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final GoogleAuthCredential googleAuthCredential =
+          GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      return new FlangoUser(
+        uid: (await _auth.signInWithCredential(
+          googleAuthCredential,
+        ))
             .user
             .uid,
       );

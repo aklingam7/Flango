@@ -32,13 +32,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
     case '/':
       return MaterialPageRoute(builder: (_) => SplashScreen());
-    case '/home':
+    case '/app':
       return MaterialPageRoute(
-        builder: (_) => HomePage(),
-      );
-    case '/login':
-      return MaterialPageRoute(
-        builder: (_) => LoginScreen(),
+        builder: (_) => AppWrapper(),
       );
 
     default:
@@ -79,189 +75,20 @@ class FlangoUser {
   FlangoUser({this.uid});
 }
 
-class HomePage extends StatefulWidget {
-  HomePage({Key key}) : super(key: key);
+class AppWrapper extends StatefulWidget {
+  AppWrapper({Key key}) : super(key: key);
 
   @override
-  _HomePageState createState() => _HomePageState();
+  _AppWrapperState createState() => _AppWrapperState();
 }
 
-class _HomePageState extends State<HomePage> {
-  bool homePageLoading = false;
+class _AppWrapperState extends State<AppWrapper> {
+  var isInit = true;
+  var displayHome = false;
+  var loading = false;
+  var newUser = true;
 
-  @override
-  void initState() {
-    super.initState();
-
-    Connectivity().onConnectivityChanged.listen(
-      (ConnectivityResult result) async {
-        Future<bool> internetLost() async {
-          return !((await (Connectivity().checkConnectivity())) ==
-                  (await (Connectivity().checkConnectivity()))) ||
-              ((await (Connectivity().checkConnectivity())) ==
-                  ConnectivityResult.none);
-        }
-
-        if (await internetLost()) {
-          () async {
-            while (await internetLost()) {
-              await Future.delayed(
-                Duration(milliseconds: 1300),
-                () async {
-                  await showDialog(
-                    context: context,
-                    barrierDismissible: true,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text("No Internet Conection"),
-                        content: Text(
-                          "An internet connection is required to use Flango.",
-                        ),
-                        actions: <Widget>[
-                          FlatButton(
-                            child: Text("Retry"),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              );
-            }
-          }();
-        }
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    _auth.authStateChange.listen(
-      (event) {
-        if (event == null) {
-          Navigator.of(context).pushReplacementNamed('/login');
-        }
-      },
-    );
-    return homePageLoading
-        ? Container(
-            color: Colors.white,
-            child: Center(
-              child: SpinKitChasingDots(
-                color: color1[100],
-                size: 100.0,
-              ),
-            ),
-          )
-        : DefaultTabController(
-            length: 3,
-            child: Scaffold(
-              appBar: AppBar(
-                title: Container(
-                  width: double.infinity,
-                  color: Colors.transparent,
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Text(
-                          "Flango",
-                          style: TextStyle(fontSize: 30),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                backgroundColor: color1[200],
-              ),
-              bottomNavigationBar: Container(
-                color: color1[200],
-                padding: EdgeInsets.only(
-                  left: 10,
-                  right: 10,
-                  top: 8,
-                  bottom: 8,
-                ),
-                child: TabBar(
-                  indicator: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0x19000000),
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                      )
-                    ],
-                    border: Border.all(
-                      color: Colors.transparent,
-                      width: 4,
-                    ),
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                    color: color1[300],
-                  ),
-                  indicatorColor: Colors.transparent,
-                  indicatorWeight: 3,
-                  tabs: [
-                    Tab(
-                      icon: Icon(Icons.topic),
-                      child: Text("My Sets"),
-                    ),
-                    Tab(
-                      icon: Icon(Icons.language),
-                      child: Text("Explore"),
-                    ),
-                    Tab(
-                      icon: Icon(Icons.settings),
-                      child: Text("Settings"),
-                    ),
-                  ],
-                ),
-              ),
-              body: TabBarView(
-                children: [
-                  Icon(Icons.directions_car_sharp),
-                  Icon(Icons.directions_transit),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      return Container(
-                        height: constraints.maxHeight,
-                        width: constraints.maxWidth,
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(Icons.directions_bike),
-                              FlatButton(
-                                  onPressed: () async {
-                                    setState(() => homePageLoading = true);
-                                    await _auth.signOut();
-                                    setState(() => homePageLoading = false);
-                                  },
-                                  child: Text("Sign Out"))
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-  }
-}
-
-class LoginScreen extends StatefulWidget {
-  LoginScreen({Key key}) : super(key: key);
-
-  @override
-  _LoginScreenState createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends State<LoginScreen> {
-  bool loading = false;
+  FlangoUser currentUser;
 
   String sgninEmail = '';
   String regEmail = '';
@@ -272,61 +99,67 @@ class _LoginScreenState extends State<LoginScreen> {
   final _regFormKey = GlobalKey<FormState>();
 
   @override
-  void initState() {
-    super.initState();
-
-    Connectivity().onConnectivityChanged.listen(
-      (ConnectivityResult result) async {
-        Future<bool> internetLost() async {
-          return !((await (Connectivity().checkConnectivity())) ==
-                  (await (Connectivity().checkConnectivity()))) ||
-              ((await (Connectivity().checkConnectivity())) ==
-                  ConnectivityResult.none);
-        }
-
-        if (await internetLost()) {
-          () async {
-            while (await internetLost()) {
-              await Future.delayed(
-                Duration(milliseconds: 1300),
-                () async {
-                  await showDialog(
-                    context: context,
-                    barrierDismissible: true,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text("No Internet Conection"),
-                        content: Text(
-                            "An internet connection is required to use Flango."),
-                        actions: <Widget>[
-                          FlatButton(
-                            child: Text("Retry"),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              );
-            }
-          }();
-        }
-      },
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    _auth.authStateChange.listen(
-      (event) {
-        if (event != null) {
-          Navigator.of(context).pushReplacementNamed('/home', arguments: event);
-        }
-      },
-    );
+    if (isInit) {
+      isInit = false;
+
+      Connectivity().onConnectivityChanged.listen(
+        (ConnectivityResult result) async {
+          Future<bool> internetLost() async {
+            return !((await (Connectivity().checkConnectivity())) ==
+                    (await (Connectivity().checkConnectivity()))) ||
+                ((await (Connectivity().checkConnectivity())) ==
+                    ConnectivityResult.none);
+          }
+
+          if (await internetLost()) {
+            () async {
+              while (await internetLost()) {
+                await Future.delayed(
+                  Duration(milliseconds: 1300),
+                  () async {
+                    await showDialog(
+                      context: context,
+                      barrierDismissible: true,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("No Internet Conection"),
+                          content: Text(
+                              "An internet connection is required to use Flango."),
+                          actions: <Widget>[
+                            FlatButton(
+                              child: Text("Retry"),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                );
+              }
+            }();
+          }
+        },
+      );
+
+      _auth.authStateChange.listen(
+        (event) {
+          print(event);
+          if (event != null) {
+            setState(() => displayHome = true);
+          } else {
+            setState(() => displayHome = false);
+          }
+          currentUser = event;
+        },
+      );
+
+      setState(() => displayHome = false);
+    }
+
     return loading
         ? Container(
             color: Colors.white,
@@ -337,555 +170,711 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           )
-        : DefaultTabController(
-            length: 2,
-            child: Scaffold(
-              appBar: AppBar(
-                title: Container(
-                  width: double.infinity,
-                  color: Colors.transparent,
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Text(
-                          "Flango",
-                          style: TextStyle(fontSize: 30),
+        : (displayHome
+            ? DefaultTabController(
+                length: 3,
+                child: Scaffold(
+                  appBar: AppBar(
+                    title: Container(
+                      width: double.infinity,
+                      color: Colors.transparent,
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              "Flango",
+                              style: TextStyle(fontSize: 30),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    backgroundColor: color1[200],
+                  ),
+                  bottomNavigationBar: Container(
+                    color: color1[200],
+                    padding: EdgeInsets.only(
+                      left: 10,
+                      right: 10,
+                      top: 8,
+                      bottom: 8,
+                    ),
+                    child: TabBar(
+                      indicator: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x19000000),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          )
+                        ],
+                        border: Border.all(
+                          color: Colors.transparent,
+                          width: 4,
+                        ),
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        color: color1[300],
+                      ),
+                      indicatorColor: Colors.transparent,
+                      indicatorWeight: 3,
+                      tabs: [
+                        Tab(
+                          icon: Icon(Icons.topic),
+                          child: Text("My Sets"),
+                        ),
+                        Tab(
+                          icon: Icon(Icons.language),
+                          child: Text("Explore"),
+                        ),
+                        Tab(
+                          icon: Icon(Icons.settings),
+                          child: Text("Settings"),
                         ),
                       ],
                     ),
                   ),
-                ),
-                backgroundColor: color1[200],
-              ),
-              bottomNavigationBar: Container(
-                color: color1[200],
-                padding: EdgeInsets.only(
-                  left: 10,
-                  right: 10,
-                  top: 8,
-                  bottom: 8,
-                ),
-                child: TabBar(
-                  indicator: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0x19000000),
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                      )
+                  body: TabBarView(
+                    children: [
+                      Icon(Icons.directions_car_sharp),
+                      Icon(Icons.directions_transit),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Container(
+                            height: constraints.maxHeight,
+                            width: constraints.maxWidth,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.directions_bike),
+                                  FlatButton(
+                                      onPressed: () async {
+                                        setState(() => loading = true);
+                                        await _auth.signOut();
+                                        setState(() => loading = false);
+                                      },
+                                      child: Text("Sign Out"))
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ],
-                    border: Border.all(
+                  ),
+                ),
+              )
+            : DefaultTabController(
+                length: 2,
+                child: Scaffold(
+                  appBar: AppBar(
+                    title: Container(
+                      width: double.infinity,
                       color: Colors.transparent,
-                      width: 4,
-                    ),
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                    color: color1[300],
-                  ),
-                  indicatorColor: Colors.transparent,
-                  indicatorWeight: 3,
-                  tabs: [
-                    Tab(
-                      icon: Icon(Icons.login),
-                      child: Text("Sign In"),
-                    ),
-                    Tab(
-                      icon: Icon(Icons.person_add_alt_1_outlined),
-                      child: Text("Sign Up"),
-                    ),
-                  ],
-                ),
-              ),
-              body: TabBarView(
-                children: [
-                  ListView(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.only(
-                          top: 15,
-                          left: 25,
-                          right: 25,
-                        ),
-                        child: Text(
-                          "Sign In to Flango to access your Flashcards",
-                          style: TextStyle(fontSize: 25),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Form(
-                        key: _sgninFormKey,
+                      child: Center(
                         child: Column(
                           children: [
-                            Padding(
-                              padding: EdgeInsets.only(
-                                top: 15,
-                                left: 25,
-                                right: 25,
-                              ),
-                              child: TextFormField(
-                                obscureText: false,
-                                validator: (val) =>
-                                    val.isEmpty ? 'Enter an email' : null,
-                                onChanged: (val) {
-                                  setState(() => sgninEmail = val);
-                                },
-                                decoration: InputDecoration(
-                                  prefixIcon: Icon(Icons.mail),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  labelText: 'Email',
-                                ),
-                              ),
+                            Text(
+                              "Flango",
+                              style: TextStyle(fontSize: 30),
                             ),
-                            Padding(
-                              padding: EdgeInsets.only(
-                                top: 13,
-                                left: 25,
-                                right: 25,
-                              ),
-                              child: TextFormField(
-                                obscureText: true,
-                                validator: (val) => val.length < 8
-                                    ? 'Passwords are 8+ characters long'
-                                    : null,
-                                onChanged: (val) {
-                                  setState(() => sgninPassword = val);
-                                },
-                                decoration: InputDecoration(
-                                  prefixIcon: Icon(Icons.vpn_key),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  labelText: 'Password',
-                                ),
-                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    backgroundColor: color1[200],
+                  ),
+                  bottomNavigationBar: Container(
+                    color: color1[200],
+                    padding: EdgeInsets.only(
+                      left: 10,
+                      right: 10,
+                      top: 8,
+                      bottom: 8,
+                    ),
+                    child: TabBar(
+                      indicator: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x19000000),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          )
+                        ],
+                        border: Border.all(
+                          color: Colors.transparent,
+                          width: 4,
+                        ),
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        color: color1[300],
+                      ),
+                      indicatorColor: Colors.transparent,
+                      indicatorWeight: 3,
+                      tabs: [
+                        Tab(
+                          icon: Icon(Icons.login),
+                          child: Text("Sign In"),
+                        ),
+                        Tab(
+                          icon: Icon(Icons.person_add_alt_1_outlined),
+                          child: Text("Sign Up"),
+                        ),
+                      ],
+                    ),
+                  ),
+                  body: TabBarView(
+                    children: [
+                      ListView(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: 15,
+                              left: 25,
+                              right: 25,
                             ),
-                            Padding(
-                              padding: EdgeInsets.only(
-                                top: 13,
-                                left: 25,
-                                right: 25,
-                              ),
-                              child: RaisedButton(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                color: Colors.black54,
-                                child: Container(
-                                  width: double.infinity,
-                                  height: 50,
-                                  child: Stack(
-                                    children: [
-                                      Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Icon(
-                                          Icons.mail,
-                                          color: Colors.white,
-                                        ),
+                            child: Text(
+                              "Sign In to Flango to access your Flashcards",
+                              style: TextStyle(fontSize: 25),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          Form(
+                            key: _sgninFormKey,
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top: 15,
+                                    left: 25,
+                                    right: 25,
+                                  ),
+                                  child: TextFormField(
+                                    obscureText: false,
+                                    validator: (val) =>
+                                        val.isEmpty ? 'Enter an email' : null,
+                                    onChanged: (val) {
+                                      setState(() => sgninEmail = val);
+                                    },
+                                    decoration: InputDecoration(
+                                      prefixIcon: Icon(Icons.mail),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
-                                      Align(
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          "Sign In with Email",
-                                          style: TextStyle(
+                                      labelText: 'Email',
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top: 13,
+                                    left: 25,
+                                    right: 25,
+                                  ),
+                                  child: TextFormField(
+                                    obscureText: true,
+                                    validator: (val) => val.length < 8
+                                        ? 'Passwords are 8+ characters long'
+                                        : null,
+                                    onChanged: (val) {
+                                      setState(() => sgninPassword = val);
+                                    },
+                                    decoration: InputDecoration(
+                                      prefixIcon: Icon(Icons.vpn_key),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      labelText: 'Password',
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top: 13,
+                                    left: 25,
+                                    right: 25,
+                                  ),
+                                  child: RaisedButton(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    color: Colors.black54,
+                                    child: Container(
+                                      width: double.infinity,
+                                      height: 50,
+                                      child: Stack(
+                                        children: [
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Icon(
+                                              Icons.mail,
                                               color: Colors.white,
-                                              fontSize: 18),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                onPressed: () async {
-                                  if (_sgninFormKey.currentState.validate()) {
-                                    setState(() => loading = true);
-                                    dynamic result =
-                                        await _auth.signInWithEmailAndPassword(
-                                      sgninEmail,
-                                      sgninPassword,
-                                    );
-                                    setState(() => loading = false);
-                                    if (result == null) {
-                                      await showDialog(
-                                        context: context,
-                                        barrierDismissible: true,
-                                        builder: (BuildContext context) {
-                                          return AlertDialog(
-                                            title: Text("Error"),
-                                            content: Text(
-                                              "Could not sign in with those credentials. Please recheck your email and password fields.",
                                             ),
-                                            actions: <Widget>[
-                                              FlatButton(
-                                                child: Text("Okay"),
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    }
-                                  }
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(
-                          top: 10,
-                          bottom: 10,
-                          left: 25,
-                          right: 25,
-                        ),
-                        child: Divider(
-                          thickness: 2,
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(
-                          left: 25,
-                          right: 25,
-                        ),
-                        child: RaisedButton(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          color: Colors.red[500],
-                          child: Container(
-                            width: double.infinity,
-                            height: 50,
-                            child: Stack(
-                              children: [
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Icon(
-                                    IconData(
-                                      0xe800,
-                                      fontFamily: 'GoogleIcon',
-                                      fontPackage: null,
-                                    ),
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Align(
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    "Sign In with Google",
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 18),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          onPressed: () {},
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(
-                          top: 10,
-                          left: 25,
-                          right: 25,
-                        ),
-                        child: RaisedButton(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          color: Colors.blue[700],
-                          child: Container(
-                            width: double.infinity,
-                            height: 50,
-                            child: Stack(
-                              children: [
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Icon(
-                                    IconData(
-                                      0xe800,
-                                      fontFamily: 'FacebookIcon',
-                                      fontPackage: null,
-                                    ),
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Align(
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    "Sign In with Facebook",
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 18),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          onPressed: () {},
-                        ),
-                      ),
-                    ],
-                  ),
-                  ListView(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.only(
-                          top: 15,
-                          left: 25,
-                          right: 25,
-                        ),
-                        child: Text(
-                          "Sign Up for Flango to start learning",
-                          style: TextStyle(fontSize: 25),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Form(
-                        key: _regFormKey,
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.only(
-                                top: 15,
-                                left: 25,
-                                right: 25,
-                              ),
-                              child: TextFormField(
-                                obscureText: false,
-                                validator: (val) =>
-                                    val.isEmpty ? 'Enter an email' : null,
-                                onChanged: (val) {
-                                  setState(() => regEmail = val);
-                                },
-                                decoration: InputDecoration(
-                                  prefixIcon: Icon(Icons.mail),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  labelText: 'Email',
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.only(
-                                top: 13,
-                                left: 25,
-                                right: 25,
-                              ),
-                              child: TextFormField(
-                                obscureText: true,
-                                validator: (val) => val.length < 8
-                                    ? 'Enter a password 8+ chars long'
-                                    : null,
-                                onChanged: (val) {
-                                  setState(() => regPassword = val);
-                                },
-                                decoration: InputDecoration(
-                                  prefixIcon: Icon(Icons.vpn_key),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  labelText: 'Password',
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.only(
-                                top: 13,
-                                left: 25,
-                                right: 25,
-                              ),
-                              child: TextFormField(
-                                obscureText: true,
-                                validator: (val) => val != regPassword
-                                    ? 'Both passwords don\'t match'
-                                    : null,
-                                decoration: InputDecoration(
-                                  prefixIcon: Icon(Icons.vpn_key),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  labelText: 'Renter Password',
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.only(
-                                top: 13,
-                                left: 25,
-                                right: 25,
-                              ),
-                              child: RaisedButton(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                color: Colors.black54,
-                                child: Container(
-                                  width: double.infinity,
-                                  height: 50,
-                                  child: Stack(
-                                    children: [
-                                      Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Icon(
-                                          Icons.mail,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      Align(
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          "Sign Up with Email",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
                                           ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                onPressed: () async {
-                                  if (_regFormKey.currentState.validate()) {
-                                    setState(() => loading = true);
-                                    dynamic result = await _auth
-                                        .registerWithEmailAndPassword(
-                                            regEmail, regPassword);
-                                    setState(() => loading = false);
-                                    if (result == null) {
-                                      await showDialog(
-                                        context: context,
-                                        barrierDismissible: true,
-                                        builder: (BuildContext context) {
-                                          return AlertDialog(
-                                            title: Text("Error"),
-                                            content: Text(
-                                              "Could not sign up. Please supply a valid email.",
+                                          Align(
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              "Sign In with Email",
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 18),
+                                              textAlign: TextAlign.center,
                                             ),
-                                            actions: <Widget>[
-                                              FlatButton(
-                                                child: Text("Okay"),
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                              ),
-                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    onPressed: () async {
+                                      if (_sgninFormKey.currentState
+                                          .validate()) {
+                                        newUser = false;
+                                        setState(() => loading = true);
+                                        dynamic result = await _auth
+                                            .signInWithEmailAndPassword(
+                                          sgninEmail,
+                                          sgninPassword,
+                                        );
+                                        setState(() => loading = false);
+                                        if (result == null) {
+                                          await showDialog(
+                                            context: context,
+                                            barrierDismissible: true,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: Text("Error"),
+                                                content: Text(
+                                                  "Could not sign in with those credentials. Please recheck your email and password fields.",
+                                                ),
+                                                actions: <Widget>[
+                                                  FlatButton(
+                                                    child: Text("Okay"),
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                  ),
+                                                ],
+                                              );
+                                            },
                                           );
-                                        },
-                                      );
-                                    }
-                                  }
-                                },
+                                        }
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: 10,
+                              bottom: 10,
+                              left: 25,
+                              right: 25,
+                            ),
+                            child: Divider(
+                              thickness: 2,
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: 25,
+                              right: 25,
+                            ),
+                            child: RaisedButton(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(
-                          top: 10,
-                          bottom: 10,
-                          left: 25,
-                          right: 25,
-                        ),
-                        child: Divider(
-                          thickness: 2,
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(
-                          left: 25,
-                          right: 25,
-                        ),
-                        child: RaisedButton(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          color: Colors.red[500],
-                          child: Container(
-                            width: double.infinity,
-                            height: 50,
-                            child: Stack(
-                              children: [
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Icon(
-                                    IconData(
-                                      0xe800,
-                                      fontFamily: 'GoogleIcon',
-                                      fontPackage: null,
+                              color: Colors.red[500],
+                              child: Container(
+                                width: double.infinity,
+                                height: 50,
+                                child: Stack(
+                                  children: [
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Icon(
+                                        IconData(
+                                          0xe800,
+                                          fontFamily: 'GoogleIcon',
+                                          fontPackage: null,
+                                        ),
+                                        color: Colors.white,
+                                      ),
                                     ),
-                                    color: Colors.white,
+                                    Align(
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        "Sign In with Google",
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 18),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              onPressed: () async {
+                                newUser = false;
+                                setState(() => loading = true);
+                                dynamic result = await _auth.googleSignIn();
+                                setState(() => loading = false);
+                                if (result == null) {
+                                  await showDialog(
+                                    context: context,
+                                    barrierDismissible: true,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: Text("Error"),
+                                        content: Text(
+                                          "Failed to sign in with Google.",
+                                        ),
+                                        actions: <Widget>[
+                                          FlatButton(
+                                            child: Text("Okay"),
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: 10,
+                              left: 25,
+                              right: 25,
+                            ),
+                            child: RaisedButton(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              color: Colors.blue[700],
+                              child: Container(
+                                width: double.infinity,
+                                height: 50,
+                                child: Stack(
+                                  children: [
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Icon(
+                                        IconData(
+                                          0xe800,
+                                          fontFamily: 'FacebookIcon',
+                                          fontPackage: null,
+                                        ),
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        "Sign In with Facebook",
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 18),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              onPressed: () {},
+                            ),
+                          ),
+                        ],
+                      ),
+                      ListView(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: 15,
+                              left: 25,
+                              right: 25,
+                            ),
+                            child: Text(
+                              "Sign Up for Flango to start learning",
+                              style: TextStyle(fontSize: 25),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          Form(
+                            key: _regFormKey,
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top: 15,
+                                    left: 25,
+                                    right: 25,
+                                  ),
+                                  child: TextFormField(
+                                    obscureText: false,
+                                    validator: (val) =>
+                                        val.isEmpty ? 'Enter an email' : null,
+                                    onChanged: (val) {
+                                      setState(() => regEmail = val);
+                                    },
+                                    decoration: InputDecoration(
+                                      prefixIcon: Icon(Icons.mail),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      labelText: 'Email',
+                                    ),
                                   ),
                                 ),
-                                Align(
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    "Sign Up with Google",
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 18),
-                                    textAlign: TextAlign.center,
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top: 13,
+                                    left: 25,
+                                    right: 25,
+                                  ),
+                                  child: TextFormField(
+                                    obscureText: true,
+                                    validator: (val) => val.length < 8
+                                        ? 'Enter a password 8+ chars long'
+                                        : null,
+                                    onChanged: (val) {
+                                      setState(() => regPassword = val);
+                                    },
+                                    decoration: InputDecoration(
+                                      prefixIcon: Icon(Icons.vpn_key),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      labelText: 'Password',
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top: 13,
+                                    left: 25,
+                                    right: 25,
+                                  ),
+                                  child: TextFormField(
+                                    obscureText: true,
+                                    validator: (val) => val != regPassword
+                                        ? 'Both passwords don\'t match'
+                                        : null,
+                                    decoration: InputDecoration(
+                                      prefixIcon: Icon(Icons.vpn_key),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      labelText: 'Renter Password',
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top: 13,
+                                    left: 25,
+                                    right: 25,
+                                  ),
+                                  child: RaisedButton(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    color: Colors.black54,
+                                    child: Container(
+                                      width: double.infinity,
+                                      height: 50,
+                                      child: Stack(
+                                        children: [
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Icon(
+                                              Icons.mail,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          Align(
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              "Sign Up with Email",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 18,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    onPressed: () async {
+                                      if (_regFormKey.currentState.validate()) {
+                                        newUser = true;
+                                        setState(() => loading = true);
+                                        dynamic result = await _auth
+                                            .registerWithEmailAndPassword(
+                                                regEmail, regPassword);
+                                        setState(() => loading = false);
+                                        if (result == null) {
+                                          await showDialog(
+                                            context: context,
+                                            barrierDismissible: true,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: Text("Error"),
+                                                content: Text(
+                                                  "Could not sign up. Please supply a valid email.",
+                                                ),
+                                                actions: <Widget>[
+                                                  FlatButton(
+                                                    child: Text("Okay"),
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        }
+                                      }
+                                    },
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          onPressed: () {},
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(
-                          top: 10,
-                          left: 25,
-                          right: 25,
-                        ),
-                        child: RaisedButton(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          color: Colors.blue[700],
-                          child: Container(
-                            width: double.infinity,
-                            height: 50,
-                            child: Stack(
-                              children: [
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Icon(
-                                    IconData(
-                                      0xe800,
-                                      fontFamily: 'FacebookIcon',
-                                      fontPackage: null,
-                                    ),
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Align(
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    "Sign Up with Facebook",
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 18),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: 10,
+                              bottom: 10,
+                              left: 25,
+                              right: 25,
+                            ),
+                            child: Divider(
+                              thickness: 2,
                             ),
                           ),
-                          onPressed: () {},
-                        ),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: 25,
+                              right: 25,
+                            ),
+                            child: RaisedButton(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              color: Colors.red[500],
+                              child: Container(
+                                width: double.infinity,
+                                height: 50,
+                                child: Stack(
+                                  children: [
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Icon(
+                                        IconData(
+                                          0xe800,
+                                          fontFamily: 'GoogleIcon',
+                                          fontPackage: null,
+                                        ),
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        "Sign Up with Google",
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 18),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              onPressed: () async {
+                                newUser = true;
+                                setState(() => loading = true);
+                                dynamic result = await _auth.googleSignIn();
+                                setState(() => loading = false);
+                                if (result == null) {
+                                  await showDialog(
+                                    context: context,
+                                    barrierDismissible: true,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: Text("Error"),
+                                        content: Text(
+                                          "Failed to sign up with Google.",
+                                        ),
+                                        actions: <Widget>[
+                                          FlatButton(
+                                            child: Text("Okay"),
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: 10,
+                              left: 25,
+                              right: 25,
+                            ),
+                            child: RaisedButton(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              color: Colors.blue[700],
+                              child: Container(
+                                width: double.infinity,
+                                height: 50,
+                                child: Stack(
+                                  children: [
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Icon(
+                                        IconData(
+                                          0xe800,
+                                          fontFamily: 'FacebookIcon',
+                                          fontPackage: null,
+                                        ),
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        "Sign Up with Facebook",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              onPressed: () {},
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          );
+                ),
+              ));
   }
 }
 
@@ -941,8 +930,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           (value) {
                             FlutterError.onError =
                                 FirebaseCrashlytics.instance.recordFlutterError;
-                            Navigator.of(context)
-                                .pushReplacementNamed('/login');
+                            Navigator.of(context).pushReplacementNamed('/app');
                           },
                           onError: (error) async {
                             print(error);
@@ -975,8 +963,7 @@ class _SplashScreenState extends State<SplashScreen> {
                             FlutterError.onError =
                                 FirebaseCrashlytics.instance.recordFlutterError;
 
-                            Navigator.of(context)
-                                .pushReplacementNamed('/login');
+                            Navigator.of(context).pushReplacementNamed('/app');
                           },
                           onError: (error) async {
                             everythingWorking = false;
