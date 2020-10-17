@@ -14,6 +14,7 @@ import 'package:firebase_performance/firebase_performance.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'package:flango/services/auth.dart';
+import 'package:flango/services/database.dart';
 
 FirebaseAnalytics analytics;
 
@@ -125,7 +126,8 @@ class _AppWrapperState extends State<AppWrapper> {
                         return AlertDialog(
                           title: Text("No Internet Conection"),
                           content: Text(
-                              "An internet connection is required to use Flango."),
+                            "An internet connection is required to use Flango.",
+                          ),
                           actions: <Widget>[
                             FlatButton(
                               child: Text("Retry"),
@@ -147,7 +149,6 @@ class _AppWrapperState extends State<AppWrapper> {
 
       _auth.authStateChange.listen(
         (event) {
-          print(event);
           if (event != null) {
             setState(() => displayHome = true);
           } else {
@@ -158,6 +159,11 @@ class _AppWrapperState extends State<AppWrapper> {
       );
 
       setState(() => displayHome = false);
+
+      Future.delayed(
+        Duration(milliseconds: 100),
+        () => setState(() => displayHome = false),
+      );
     }
 
     return loading
@@ -494,7 +500,7 @@ class _AppWrapperState extends State<AppWrapper> {
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: Icon(
-                                        IconData(
+                                        const IconData(
                                           0xe800,
                                           fontFamily: 'GoogleIcon',
                                           fontPackage: null,
@@ -563,7 +569,7 @@ class _AppWrapperState extends State<AppWrapper> {
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: Icon(
-                                        IconData(
+                                        const IconData(
                                           0xe800,
                                           fontFamily: 'FacebookIcon',
                                           fontPackage: null,
@@ -583,7 +589,34 @@ class _AppWrapperState extends State<AppWrapper> {
                                   ],
                                 ),
                               ),
-                              onPressed: () {},
+                              onPressed: () async {
+                                newUser = false;
+                                setState(() => loading = true);
+                                dynamic result = await _auth.facebookSignIn();
+                                setState(() => loading = false);
+                                if (result == null) {
+                                  await showDialog(
+                                    context: context,
+                                    barrierDismissible: true,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: Text("Error"),
+                                        content: Text(
+                                          "Failed to sign in with Facebook.",
+                                        ),
+                                        actions: <Widget>[
+                                          FlatButton(
+                                            child: Text("Okay"),
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                }
+                              },
                             ),
                           ),
                         ],
@@ -775,7 +808,7 @@ class _AppWrapperState extends State<AppWrapper> {
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: Icon(
-                                        IconData(
+                                        const IconData(
                                           0xe800,
                                           fontFamily: 'GoogleIcon',
                                           fontPackage: null,
@@ -844,7 +877,7 @@ class _AppWrapperState extends State<AppWrapper> {
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: Icon(
-                                        IconData(
+                                        const IconData(
                                           0xe800,
                                           fontFamily: 'FacebookIcon',
                                           fontPackage: null,
@@ -866,7 +899,34 @@ class _AppWrapperState extends State<AppWrapper> {
                                   ],
                                 ),
                               ),
-                              onPressed: () {},
+                              onPressed: () async {
+                                newUser = true;
+                                setState(() => loading = true);
+                                dynamic result = await _auth.facebookSignIn();
+                                setState(() => loading = false);
+                                if (result == null) {
+                                  await showDialog(
+                                    context: context,
+                                    barrierDismissible: true,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: Text("Error"),
+                                        content: Text(
+                                          "Failed to sign up with Facebook.",
+                                        ),
+                                        actions: <Widget>[
+                                          FlatButton(
+                                            child: Text("Okay"),
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                }
+                              },
                             ),
                           ),
                         ],

@@ -32,6 +32,7 @@ dependencies:
   # User Auth
   firebase_auth: ^0.18.1
   google_sign_in: ^4.5.5
+  flutter_facebook_login: ^3.0.0
 
   # Analytics
   firebase_analytics: ^6.0.2

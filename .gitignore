@@ -13,8 +13,9 @@
 key.properties
 *.jks
 /android/app/google-services.json
-/lib/private/
-/lib/old/
+/lib/private/*
+/lib/old/*
+/android/app/src/main/res/values/strings.xml
 
 # IntelliJ related
 *.iml
