@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:connectivity/connectivity.dart';
+import 'package:provider/provider.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -35,7 +36,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(builder: (_) => SplashScreen());
     case '/app':
       return MaterialPageRoute(
-        builder: (_) => AppWrapper(),
+        builder: (_) => AppWrapperProvider(),
       );
 
     default:
@@ -76,6 +77,25 @@ class FlangoUser {
   FlangoUser({this.uid});
 }
 
+class AppWrapperProvider extends StatefulWidget {
+  AppWrapperProvider({Key key}) : super(key: key);
+
+  @override
+  _AppWrapperProviderState createState() => _AppWrapperProviderState();
+}
+
+class _AppWrapperProviderState extends State<AppWrapperProvider> {
+  @override
+  Widget build(BuildContext context) {
+    return StreamProvider<FlangoUser>.value(
+      value: _auth.authStateChange,
+      child: Container(
+        child: AppWrapper(),
+      ),
+    );
+  }
+}
+
 class AppWrapper extends StatefulWidget {
   AppWrapper({Key key}) : super(key: key);
 
@@ -85,11 +105,8 @@ class AppWrapper extends StatefulWidget {
 
 class _AppWrapperState extends State<AppWrapper> {
   var isInit = true;
-  var displayHome = false;
   var loading = false;
   var newUser = true;
-
-  FlangoUser currentUser;
 
   String sgninEmail = '';
   String regEmail = '';
@@ -101,9 +118,10 @@ class _AppWrapperState extends State<AppWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    final FlangoUser currentUser = Provider.of<FlangoUser>(context);
+
     if (isInit) {
       isInit = false;
-
       Connectivity().onConnectivityChanged.listen(
         (ConnectivityResult result) async {
           Future<bool> internetLost() async {
@@ -146,24 +164,6 @@ class _AppWrapperState extends State<AppWrapper> {
           }
         },
       );
-
-      _auth.authStateChange.listen(
-        (event) {
-          if (event != null) {
-            setState(() => displayHome = true);
-          } else {
-            setState(() => displayHome = false);
-          }
-          currentUser = event;
-        },
-      );
-
-      setState(() => displayHome = false);
-
-      Future.delayed(
-        Duration(milliseconds: 100),
-        () => setState(() => displayHome = false),
-      );
     }
 
     return loading
@@ -176,7 +176,7 @@ class _AppWrapperState extends State<AppWrapper> {
               ),
             ),
           )
-        : (displayHome
+        : ((currentUser != null)
             ? DefaultTabController(
                 length: 3,
                 child: Scaffold(
@@ -523,7 +523,8 @@ class _AppWrapperState extends State<AppWrapper> {
                               onPressed: () async {
                                 newUser = false;
                                 setState(() => loading = true);
-                                dynamic result = await _auth.googleSignIn();
+                                dynamic result =
+                                    await _auth.googleSignIn(isSignUp: false);
                                 setState(() => loading = false);
                                 if (result == null) {
                                   await showDialog(
@@ -592,7 +593,8 @@ class _AppWrapperState extends State<AppWrapper> {
                               onPressed: () async {
                                 newUser = false;
                                 setState(() => loading = true);
-                                dynamic result = await _auth.facebookSignIn();
+                                dynamic result =
+                                    await _auth.facebookSignIn(isSignUp: false);
                                 setState(() => loading = false);
                                 if (result == null) {
                                   await showDialog(
@@ -747,7 +749,10 @@ class _AppWrapperState extends State<AppWrapper> {
                                         setState(() => loading = true);
                                         dynamic result = await _auth
                                             .registerWithEmailAndPassword(
-                                                regEmail, regPassword);
+                                          regEmail,
+                                          regPassword,
+                                          sdcontext: context,
+                                        );
                                         setState(() => loading = false);
                                         if (result == null) {
                                           await showDialog(
@@ -831,7 +836,10 @@ class _AppWrapperState extends State<AppWrapper> {
                               onPressed: () async {
                                 newUser = true;
                                 setState(() => loading = true);
-                                dynamic result = await _auth.googleSignIn();
+                                dynamic result = await _auth.googleSignIn(
+                                  isSignUp: true,
+                                  sdcontext: context,
+                                );
                                 setState(() => loading = false);
                                 if (result == null) {
                                   await showDialog(
@@ -902,7 +910,10 @@ class _AppWrapperState extends State<AppWrapper> {
                               onPressed: () async {
                                 newUser = true;
                                 setState(() => loading = true);
-                                dynamic result = await _auth.facebookSignIn();
+                                dynamic result = await _auth.facebookSignIn(
+                                  isSignUp: true,
+                                  sdcontext: context,
+                                );
                                 setState(() => loading = false);
                                 if (result == null) {
                                   await showDialog(
