@@ -1,10 +1,12 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_login/flutter_facebook_login.dart';
 
 import 'package:flango/main.dart' show FlangoUser;
+import 'package:flango/services/database.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -42,15 +44,19 @@ class AuthService {
     );
   }
 
+  //Todo: Add Sign in with Anon
+
   Future signInWithEmailAndPassword(String email, String password) async {
     try {
-      return new FlangoUser(
+      var toReturn = FlangoUser(
         //uid: (await _auth.signInWithEmailAndPassword(email: null, password: null,))
         uid: (await _auth.signInWithEmailAndPassword(
                 email: email, password: password))
             .user
             .uid,
       );
+      DatabaseService(toReturn.uid).initializeCollection();
+      return toReturn;
     } catch (e) {
       return null;
     }
@@ -65,6 +71,7 @@ class AuthService {
             .user
             .uid,
       );
+      DatabaseService(toReturn.uid).initializeCollection();
       _welcomeUser(sdcontext);
       return toReturn;
     } catch (e) {
@@ -92,6 +99,7 @@ class AuthService {
             .user
             .uid,
       );
+      DatabaseService(toReturn.uid).initializeCollection();
       if (isSignUp) {
         _welcomeUser(sdcontext);
       }
@@ -120,6 +128,7 @@ class AuthService {
                 .user
                 .uid,
           );
+          DatabaseService(toReturn.uid).initializeCollection();
           if (isSignUp) {
             _welcomeUser(sdcontext);
           }

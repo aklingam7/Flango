@@ -83,7 +83,7 @@ flutter:
   assets:
     - assets/avatars/test.jpg
     - assets/icons/high-res.png
-    - assets/icon_fonts/GoogleIcon.ttf
+    - assets/icons/empty_box.png
   #  - assets/icons/background-final.png
   #  - assets/icons/foreground-final.png
 
@@ -109,6 +109,9 @@ flutter:
         - asset: assets/icon_fonts/FacebookIcon.ttf
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
+    #- family: fontello
+    #  fonts:
+    #    - asset: assets/icon_fonts/BoxIcon.ttf
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

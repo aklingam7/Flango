@@ -13,6 +13,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 // ignore: unused_import
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' show QuerySnapshot;
 
 import 'package:flango/services/auth.dart';
 import 'package:flango/services/database.dart';
@@ -77,6 +78,25 @@ class FlangoUser {
   FlangoUser({this.uid});
 }
 
+class FlashcardSet {
+  String name;
+  String emoji;
+  int bgColor;
+  List<String> flashcards;
+  FlashcardSet(
+      String rname, String remoji, int rbgColor, List<String> rflashcards) {
+    print("plsgggobject");
+    this.name = rname;
+    print("plsgggobject");
+    this.emoji = remoji;
+    print("plsgggobject");
+    this.bgColor = rbgColor;
+    print("plsgggobject");
+    this.flashcards = rflashcards;
+    print("plsgggobject");
+  }
+}
+
 class AppWrapperProvider extends StatefulWidget {
   AppWrapperProvider({Key key}) : super(key: key);
 
@@ -115,6 +135,117 @@ class _AppWrapperState extends State<AppWrapper> {
 
   final _sgninFormKey = GlobalKey<FormState>();
   final _regFormKey = GlobalKey<FormState>();
+
+  Widget _setCard(Map flashcardSet) {
+    return Padding(
+      padding: const EdgeInsets.all(5.0),
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
+          side: BorderSide(
+            width: 2,
+            color: color1[300],
+          ),
+        ),
+        child: InkWell(
+          splashColor: Colors.lightBlue[200].withAlpha(100),
+          onTap: () {},
+          child: Container(
+            //color: Colors.amber[300],
+            height: 10,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(15),
+                    topRight: Radius.circular(15),
+                  ),
+                  child: Container(
+                    //color: Colors.green[300],
+                    height: 75,
+                    color: Color(flashcardSet['bgColor']),
+                    child: Center(
+                      child: Text(
+                        flashcardSet['emoji'],
+                        style: TextStyle(fontSize: 40),
+                      ),
+                    ),
+                  ),
+                ),
+                Spacer(),
+                Container(
+                  //color: Colors.amber[50],
+                  height: 50,
+                  width: double.infinity,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: 15,
+                      right: 15,
+                    ),
+                    child: LayoutBuilder(builder:
+                        (BuildContext context, BoxConstraints constraints) {
+                      return Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Container(
+                              //color: Colors.amber,
+                              height: double.infinity,
+                              width: constraints.maxWidth * 51 / 80,
+                              child: Center(
+                                child: Container(
+                                  width: double.infinity,
+                                  child: Text(
+                                    flashcardSet['name'],
+                                    textAlign: TextAlign.start,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Spacer(),
+                            Container(
+                              //color: Colors.amber,
+                              height: double.infinity,
+                              width: constraints.maxWidth * 7 / 20,
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      "Cards:",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(fontSize: 13),
+                                    ),
+                                    Text(
+                                      flashcardSet['flashcards']
+                                          .length
+                                          .toString(),
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(fontSize: 16),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+                Spacer(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -225,12 +356,12 @@ class _AppWrapperState extends State<AppWrapper> {
                       indicatorWeight: 3,
                       tabs: [
                         Tab(
-                          icon: Icon(Icons.topic),
+                          icon: Icon(Icons.archive),
                           child: Text("My Sets"),
                         ),
                         Tab(
                           icon: Icon(Icons.language),
-                          child: Text("Explore"),
+                          child: Text("Flango's Sets"),
                         ),
                         Tab(
                           icon: Icon(Icons.settings),
@@ -242,7 +373,75 @@ class _AppWrapperState extends State<AppWrapper> {
                   body: TabBarView(
                     children: [
                       Icon(Icons.directions_car_sharp),
-                      Icon(Icons.directions_transit),
+                      StreamBuilder(
+                        stream: DatabaseService(currentUser.uid)
+                            .officialSetsChangesStream(),
+                        builder: (context, snapshot) {
+                          QuerySnapshot flashcardSetList = snapshot.data;
+
+                          return (flashcardSetList == null)
+                              ? LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return Container(
+                                      height: constraints.maxHeight,
+                                      width: constraints.maxWidth,
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsets.only(
+                                                bottom: 15,
+                                              ),
+                                              child: Text(
+                                                "Nothing here now",
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                            ),
+                                            Image.asset(
+                                              "assets/icons/empty_box.png",
+                                              width: constraints.maxWidth * 0.4,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: GridView.builder(
+                                    itemCount: flashcardSetList.docs.length,
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      return _setCard(
+                                        {
+                                          'name':
+                                              flashcardSetList.docs[index].id,
+                                          'emoji': flashcardSetList.docs[index]
+                                              .data()['emoji'],
+                                          'bgColor': flashcardSetList
+                                              .docs[index]
+                                              .data()['bgColor'],
+                                          'flashcards': flashcardSetList
+                                              .docs[index]
+                                              .data()['flashcards'],
+                                        },
+                                      );
+                                    },
+                                  ),
+                                );
+                        },
+                      ),
                       LayoutBuilder(
                         builder: (context, constraints) {
                           return Container(
@@ -255,12 +454,13 @@ class _AppWrapperState extends State<AppWrapper> {
                                 children: [
                                   Icon(Icons.directions_bike),
                                   FlatButton(
-                                      onPressed: () async {
-                                        setState(() => loading = true);
-                                        await _auth.signOut();
-                                        setState(() => loading = false);
-                                      },
-                                      child: Text("Sign Out"))
+                                    onPressed: () async {
+                                      setState(() => loading = true);
+                                      await _auth.signOut();
+                                      setState(() => loading = false);
+                                    },
+                                    child: Text("Sign Out"),
+                                  )
                                 ],
                               ),
                             ),
