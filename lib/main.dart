@@ -137,6 +137,9 @@ class _AppWrapperState extends State<AppWrapper> {
   final _sgninFormKey = GlobalKey<FormState>();
   final _regFormKey = GlobalKey<FormState>();
 
+  GlobalKey<FormState> _newSetKey;
+
+  //aspect Ratio for grid view
   Widget _setCard(Map flashcardSet) {
     return Padding(
       padding: const EdgeInsets.all(5.0),
@@ -373,84 +376,105 @@ class _AppWrapperState extends State<AppWrapper> {
                   ),
                   body: TabBarView(
                     children: [
-                      StreamBuilder(
-                        stream: DatabaseService(currentUser.uid)
-                            .userSetsChangesStream(),
-                        builder: (context, snapshot) {
-                          QuerySnapshot flashcardSetList = snapshot.data;
-                          List<QueryDocumentSnapshot> unFDocsList = [];
-                          List<QueryDocumentSnapshot> docsList = [];
-                          if (flashcardSetList != null) {
-                            unFDocsList = flashcardSetList.docs;
-                            //List<QueryDocumentSnapshot> docsList = [];
-                            for (var indDocument in unFDocsList) {
-                              if (indDocument.data()['test'] != 'test') {
-                                docsList.add(indDocument);
+                      Stack(
+                        children: [
+                          StreamBuilder(
+                            stream: DatabaseService(currentUser.uid)
+                                .userSetsChangesStream(),
+                            builder: (context, snapshot) {
+                              QuerySnapshot flashcardSetList = snapshot.data;
+                              List<QueryDocumentSnapshot> unFDocsList = [];
+                              List<QueryDocumentSnapshot> docsList = [];
+                              if (flashcardSetList != null) {
+                                unFDocsList = flashcardSetList.docs;
+                                //List<QueryDocumentSnapshot> docsList = [];
+                                for (var indDocument in unFDocsList) {
+                                  if (indDocument.data()['test'] != 'test') {
+                                    docsList.add(indDocument);
+                                  }
+                                }
                               }
-                            }
-                          }
-                          print("fgdgdrhdt ${docsList.length}");
-                          print("fgdgdrhdt ${docsList.length == 0}");
-                          return (docsList.length ==
-                                  0) //flashcardSetList.docs.length == 1)
-                              ? LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    return Container(
-                                      height: constraints.maxHeight,
-                                      width: constraints.maxWidth,
-                                      child: Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom: 15,
-                                              ),
-                                              child: Text(
-                                                "Nothing here now",
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  fontSize: 18,
+                              print("fgdgdrhdt ${docsList.length}");
+                              print("fgdgdrhdt ${docsList.length == 0}");
+                              return (docsList.length ==
+                                      0) //flashcardSetList.docs.length == 1)
+                                  ? LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        return Container(
+                                          height: constraints.maxHeight,
+                                          width: constraints.maxWidth,
+                                          child: Center(
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                    bottom: 15,
+                                                  ),
+                                                  child: Text(
+                                                    "Nothing here now",
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontSize: 18,
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
+                                                Image.asset(
+                                                  "assets/icons/empty_box.png",
+                                                  width: constraints.maxWidth *
+                                                      0.4,
+                                                ),
+                                              ],
                                             ),
-                                            Image.asset(
-                                              "assets/icons/empty_box.png",
-                                              width: constraints.maxWidth * 0.4,
-                                            ),
-                                          ],
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: GridView.builder(
+                                        itemCount: docsList.length,
+                                        gridDelegate:
+                                            SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
                                         ),
+                                        itemBuilder: (context, index) {
+                                          return _setCard(
+                                            {
+                                              'name': docsList[index].id,
+                                              'emoji': docsList[index]
+                                                  .data()['emoji'],
+                                              'bgColor': docsList[index]
+                                                  .data()['bgColor'],
+                                              'flashcards': docsList[index]
+                                                  .data()['flashcards'],
+                                            },
+                                          );
+                                        },
                                       ),
                                     );
-                                  },
-                                )
-                              : Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: GridView.builder(
-                                    itemCount: docsList.length,
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                    ),
-                                    itemBuilder: (context, index) {
-                                      return _setCard(
-                                        {
-                                          'name': docsList[index].id,
-                                          'emoji':
-                                              docsList[index].data()['emoji'],
-                                          'bgColor':
-                                              docsList[index].data()['bgColor'],
-                                          'flashcards': docsList[index]
-                                              .data()['flashcards'],
-                                        },
-                                      );
-                                    },
-                                  ),
-                                );
-                        },
+                            },
+                          ),
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(15.0),
+                              child: FloatingActionButton(
+                                child: Icon(Icons.add),
+                                onPressed: () {
+                                  DatabaseService(currentUser.uid).updateSet(
+                                    context,
+                                    _newSetKey,
+                                    setState,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       StreamBuilder(
                         stream: DatabaseService(currentUser.uid)
@@ -658,7 +682,7 @@ class _AppWrapperState extends State<AppWrapper> {
                                   ),
                                   child: TextFormField(
                                     obscureText: true,
-                                    validator: (val) => val.length < 8
+                                    validator: (val) => val.length <= 8
                                         ? 'Passwords are 8+ characters long'
                                         : null,
                                     onChanged: (val) {
@@ -950,7 +974,7 @@ class _AppWrapperState extends State<AppWrapper> {
                                   ),
                                   child: TextFormField(
                                     obscureText: true,
-                                    validator: (val) => val.length < 8
+                                    validator: (val) => val.length <= 8
                                         ? 'Enter a password 8+ chars long'
                                         : null,
                                     onChanged: (val) {
