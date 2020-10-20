@@ -1,5 +1,7 @@
+import 'package:flango/services/auth.dart';
 import 'package:flutter/material.dart'
     show
+        // ignore: unused_shown_name
         Color,
         Colors,
         EdgeInsets,
@@ -242,7 +244,7 @@ class ColorsService {
   List<Widget> colorsList(
     //int bgColor,
     MaterialColor bgColorClr,
-    int bgColorStr,
+    double bgColorStr,
     Null Function(int) setState,
   ) {
     List<Widget> toReturn = [];
@@ -250,17 +252,18 @@ class ColorsService {
       MaterialColor tC = ColorsService().colors[i]['color'];
       toReturn.add(
         Padding(
-          padding: EdgeInsets.all(4),
+          padding: EdgeInsets.all(2),
           child: (bgColorClr == tC)
               ? FloatingActionButton(
+                  heroTag: AuthService().heroTagGenerator(),
                   onPressed: () {},
-                  backgroundColor: tC[bgColorStr],
+                  backgroundColor: tC[bgColorStr.toInt()],
                   child: Icon(Icons.cancel),
                 )
               : FloatingActionButton(
-                  backgroundColor: tC[bgColorStr],
+                  heroTag: AuthService().heroTagGenerator(),
+                  backgroundColor: tC[bgColorStr.toInt()],
                   onPressed: () {
-                    print(i);
                     setState(i);
                   },
                 ),
@@ -271,18 +274,13 @@ class ColorsService {
   }
 
   Map intToColorData(int color) {
-    print("objectgfhffsh ${color}");
     Map toReturn;
     for (var inColor in colors) {
-      print(inColor);
-      print("ergregherhset ${inColor.keys}");
       for (var key in inColor.keys) {
-        print(
-            "object ${inColor[key]} uiui $key gr ${key == 'color'} nn ${inColor[key] == color}");
         if (inColor[key] == color && key != 'color') {
           toReturn = {
             'color': inColor['color'],
-            'str': int.parse(key.substring(key.length - 3)),
+            'str': double.parse(key.substring(key.length - 3)),
           };
         }
       }
@@ -291,7 +289,7 @@ class ColorsService {
     return toReturn ??
         {
           'color': Colors.amber,
-          'str': 600,
+          'str': 600.toDouble(),
         };
   }
 }

@@ -137,116 +137,134 @@ class _AppWrapperState extends State<AppWrapper> {
   final _sgninFormKey = GlobalKey<FormState>();
   final _regFormKey = GlobalKey<FormState>();
 
-  GlobalKey<FormState> _newSetKey;
+  //GlobalKey<FormState> _newSetKey;
 
-  //aspect Ratio for grid view
-  Widget _setCard(Map flashcardSet) {
+  //aspect Ratio for grid view or stakd list
+  Widget _setCard(Map flashcardSet, Function onTap) {
     return Padding(
       padding: const EdgeInsets.all(5.0),
-      child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0),
-          side: BorderSide(
-            width: 2,
-            color: color1[300],
-          ),
-        ),
-        child: InkWell(
-          splashColor: Colors.lightBlue[200].withAlpha(100),
-          onTap: () {},
-          child: Container(
-            //color: Colors.amber[300],
-            height: 10,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(15),
-                    topRight: Radius.circular(15),
-                  ),
-                  child: Container(
-                    //color: Colors.green[300],
-                    height: 75,
-                    color: Color(flashcardSet['bgColor']),
-                    child: Center(
-                      child: Text(
-                        flashcardSet['emoji'],
-                        style: TextStyle(fontSize: 40),
-                      ),
-                    ),
-                  ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.0),
+              side: BorderSide(
+                width: 2,
+                color: color1[300],
+              ),
+            ),
+            child: InkWell(
+              splashColor: Colors.lightBlue[200].withAlpha(100),
+              onTap: onTap,
+              child: ClipRRect(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(15),
+                  topRight: Radius.circular(15),
+                  bottomLeft: Radius.circular(15),
+                  bottomRight: Radius.circular(15),
                 ),
-                Spacer(),
-                Container(
-                  //color: Colors.amber[50],
-                  height: 50,
-                  width: double.infinity,
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      left: 15,
-                      right: 15,
-                    ),
-                    child: LayoutBuilder(builder:
-                        (BuildContext context, BoxConstraints constraints) {
-                      return Center(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.max,
-                          children: [
-                            Container(
-                              //color: Colors.amber,
-                              height: double.infinity,
-                              width: constraints.maxWidth * 51 / 80,
-                              child: Center(
-                                child: Container(
-                                  width: double.infinity,
-                                  child: Text(
-                                    flashcardSet['name'],
-                                    textAlign: TextAlign.start,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                child: Container(
+                  color: Color(flashcardSet['bgColor']),
+                  width: MediaQuery.of(context).size.width * 4.78,
+                  height: 135,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Spacer(),
+                      Center(
+                        child: Container(
+                          //color: Colors.green[300],
+
+                          color: Color(flashcardSet['bgColor']),
+                          child: Center(
+                            child: Text(
+                              flashcardSet['emoji'],
+                              style: TextStyle(
+                                fontSize: constraints.maxHeight * 0.4,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Spacer(),
+                      Container(
+                        color: Colors.white,
+                        height: 50,
+                        width: double.infinity,
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            left: 15,
+                            right: 15,
+                          ),
+                          child: LayoutBuilder(builder: (BuildContext context,
+                              BoxConstraints constraints) {
+                            return Center(
+                              child: Stack(
+                                children: [
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Container(
+                                      //color: Colors.amber,
+                                      height: double.infinity,
+                                      width: constraints.maxWidth * 51 / 80,
+                                      child: Center(
+                                        child: Container(
+                                          width: double.infinity,
+                                          child: Text(
+                                            flashcardSet['name'],
+                                            textAlign: TextAlign.start,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            ),
-                            Spacer(),
-                            Container(
-                              //color: Colors.amber,
-                              height: double.infinity,
-                              width: constraints.maxWidth * 7 / 20,
-                              child: Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      "Cards:",
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(fontSize: 13),
+                                  //Spacer(),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Container(
+                                      //color: Colors.amber,
+                                      height: double.infinity,
+                                      width: constraints.maxWidth * 7 / 20,
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              "Cards:",
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(fontSize: 13),
+                                            ),
+                                            Text(
+                                              flashcardSet['flashcards']
+                                                  .length
+                                                  .toString(),
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(fontSize: 16),
+                                            )
+                                          ],
+                                        ),
+                                      ),
                                     ),
-                                    Text(
-                                      flashcardSet['flashcards']
-                                          .length
-                                          .toString(),
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(fontSize: 16),
-                                    )
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
+                            );
+                          }),
                         ),
-                      );
-                    }),
+                      ),
+                      //Spacer(),
+                    ],
                   ),
                 ),
-                Spacer(),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -376,27 +394,27 @@ class _AppWrapperState extends State<AppWrapper> {
                   ),
                   body: TabBarView(
                     children: [
-                      Stack(
-                        children: [
-                          StreamBuilder(
-                            stream: DatabaseService(currentUser.uid)
-                                .userSetsChangesStream(),
-                            builder: (context, snapshot) {
-                              QuerySnapshot flashcardSetList = snapshot.data;
-                              List<QueryDocumentSnapshot> unFDocsList = [];
-                              List<QueryDocumentSnapshot> docsList = [];
-                              if (flashcardSetList != null) {
-                                unFDocsList = flashcardSetList.docs;
-                                //List<QueryDocumentSnapshot> docsList = [];
-                                for (var indDocument in unFDocsList) {
-                                  if (indDocument.data()['test'] != 'test') {
-                                    docsList.add(indDocument);
-                                  }
-                                }
+                      StreamBuilder(
+                        stream: DatabaseService(currentUser.uid)
+                            .userSetsChangesStream(),
+                        builder: (context, snapshot) {
+                          QuerySnapshot flashcardSetList = snapshot.data;
+                          List<QueryDocumentSnapshot> unFDocsList = [];
+                          List<QueryDocumentSnapshot> docsList = [];
+                          if (flashcardSetList != null) {
+                            unFDocsList = flashcardSetList.docs;
+                            //List<QueryDocumentSnapshot> docsList = [];
+                            for (var indDocument in unFDocsList) {
+                              if (indDocument.data()['test'] != 'test') {
+                                docsList.add(indDocument);
                               }
-                              print("fgdgdrhdt ${docsList.length}");
-                              print("fgdgdrhdt ${docsList.length == 0}");
-                              return (docsList.length ==
+                            }
+                          }
+                          print("fgdgdrhdt ${docsList.length}");
+                          print("fgdgdrhdt ${docsList.length == 0}");
+                          return Stack(
+                            children: [
+                              (docsList.length ==
                                       0) //flashcardSetList.docs.length == 1)
                                   ? LayoutBuilder(
                                       builder: (context, constraints) {
@@ -412,13 +430,13 @@ class _AppWrapperState extends State<AppWrapper> {
                                               children: [
                                                 Padding(
                                                   padding: EdgeInsets.only(
-                                                    bottom: 15,
+                                                    bottom: 22,
                                                   ),
                                                   child: Text(
                                                     "Nothing here now",
                                                     textAlign: TextAlign.center,
                                                     style: TextStyle(
-                                                      fontSize: 18,
+                                                      fontSize: 24,
                                                     ),
                                                   ),
                                                 ),
@@ -436,6 +454,7 @@ class _AppWrapperState extends State<AppWrapper> {
                                   : Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: GridView.builder(
+                                        //childAspectRatio: ,
                                         itemCount: docsList.length,
                                         gridDelegate:
                                             SliverGridDelegateWithFixedCrossAxisCount(
@@ -452,29 +471,60 @@ class _AppWrapperState extends State<AppWrapper> {
                                               'flashcards': docsList[index]
                                                   .data()['flashcards'],
                                             },
+                                            () {
+                                              DatabaseService(currentUser.uid)
+                                                  .updateSet(
+                                                context,
+                                                setState,
+                                                "Flashcard Set: ",
+                                                "open",
+                                                false,
+                                                docsList
+                                                    .map((e) => e.id)
+                                                    .toList(),
+                                                eName: docsList[index].id,
+                                                eEmoji: docsList[index]
+                                                    .data()['emoji'],
+                                                eBgColor: docsList[index]
+                                                    .data()['bgColor'],
+                                                eFlashcards:
+                                                    (docsList[index].data()[
+                                                                'flashcards']
+                                                            as List<dynamic>)
+                                                        .map<String>(
+                                                          (e) => e.toString(),
+                                                        )
+                                                        .toList(),
+                                              );
+                                            },
                                           );
                                         },
                                       ),
-                                    );
-                            },
-                          ),
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: Padding(
-                              padding: const EdgeInsets.all(15.0),
-                              child: FloatingActionButton(
-                                child: Icon(Icons.add),
-                                onPressed: () {
-                                  DatabaseService(currentUser.uid).updateSet(
-                                    context,
-                                    _newSetKey,
-                                    setState,
-                                  );
-                                },
+                                    ),
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(15.0),
+                                  child: FloatingActionButton(
+                                    heroTag: AuthService().heroTagGenerator(),
+                                    child: Icon(Icons.add),
+                                    onPressed: () {
+                                      DatabaseService(currentUser.uid)
+                                          .updateSet(
+                                        context,
+                                        setState,
+                                        "Create New Set: ",
+                                        "edit",
+                                        true,
+                                        docsList.map((e) => e.id).toList(),
+                                      );
+                                    },
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        ],
+                            ],
+                          );
+                        },
                       ),
                       StreamBuilder(
                         stream: DatabaseService(currentUser.uid)
@@ -497,13 +547,15 @@ class _AppWrapperState extends State<AppWrapper> {
                                           children: [
                                             Padding(
                                               padding: EdgeInsets.only(
-                                                bottom: 15,
+                                                bottom: 22,
+                                                left: 10,
+                                                right: 10,
                                               ),
                                               child: Text(
                                                 "Nothing here now",
                                                 textAlign: TextAlign.center,
                                                 style: TextStyle(
-                                                  fontSize: 18,
+                                                  fontSize: 24,
                                                 ),
                                               ),
                                             ),
@@ -538,6 +590,33 @@ class _AppWrapperState extends State<AppWrapper> {
                                           'flashcards': flashcardSetList
                                               .docs[index]
                                               .data()['flashcards'],
+                                        },
+                                        () {
+                                          DatabaseService(currentUser.uid)
+                                              .updateSet(
+                                            context,
+                                            setState,
+                                            "Flashcard Set: ",
+                                            "view",
+                                            false,
+                                            flashcardSetList.docs
+                                                .map((e) => e.id)
+                                                .toList(),
+                                            eName:
+                                                flashcardSetList.docs[index].id,
+                                            eEmoji: flashcardSetList.docs[index]
+                                                .data()['emoji'],
+                                            eBgColor: flashcardSetList
+                                                .docs[index]
+                                                .data()['bgColor'],
+                                            eFlashcards: (flashcardSetList
+                                                        .docs[index]
+                                                        .data()['flashcards']
+                                                    as List<dynamic>)
+                                                .map<String>(
+                                                    (e) => e.toString())
+                                                .toList(),
+                                          );
                                         },
                                       );
                                     },
@@ -826,8 +905,10 @@ class _AppWrapperState extends State<AppWrapper> {
                               onPressed: () async {
                                 newUser = false;
                                 setState(() => loading = true);
-                                dynamic result =
-                                    await _auth.googleSignIn(isSignUp: false);
+                                dynamic result = await _auth.googleSignIn(
+                                  isSignUp: false,
+                                  sdcontext: context,
+                                );
                                 setState(() => loading = false);
                                 if (result == null) {
                                   await showDialog(
@@ -896,8 +977,10 @@ class _AppWrapperState extends State<AppWrapper> {
                               onPressed: () async {
                                 newUser = false;
                                 setState(() => loading = true);
-                                dynamic result =
-                                    await _auth.facebookSignIn(isSignUp: false);
+                                dynamic result = await _auth.facebookSignIn(
+                                  isSignUp: false,
+                                  sdcontext: context,
+                                );
                                 setState(() => loading = false);
                                 if (result == null) {
                                   await showDialog(

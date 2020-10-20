@@ -1,4 +1,7 @@
+import 'package:flango/main.dart';
+import 'package:flango/services/auth.dart';
 import 'package:flango/services/colors.dart';
+import 'package:flango/services/flashcards.dart';
 import 'package:flutter/material.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -158,32 +161,50 @@ class DatabaseService {
 
   Future updateSet(
     BuildContext context,
-    GlobalKey<FormState> key,
-    Function setState, {
+    //GlobalKey<FormState> key,
+    Function setState,
+    String appBarTitle,
+    String mode,
+    bool tickShouldPop,
+    List<String> setNames, {
     String eName,
     String eEmoji,
     int eBgColor,
     List<String> eFlashcards,
   }) async {
-    await showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return _EditModalContents(
-          fKey: key,
-          userCollection: userCollection,
-          eName: eName,
-          eEmoji: eEmoji,
-          eBgColor: eBgColor,
-          eFlashcards: eFlashcards,
-        );
-      },
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return _EditPage(
+            //fKey: key,
+            userCollection: userCollection,
+            appBarTitle: appBarTitle,
+            mode: mode,
+            tickShouldPop: tickShouldPop,
+            setNames: setNames,
+            eName: eName,
+            eEmoji: eEmoji,
+            eBgColor: eBgColor,
+            eFlashcards: eFlashcards,
+          );
+        },
+      ),
     );
   }
 
-  Future initializeCollection() async {
+  Future initializeCollection(String lang) async {
     return await userCollection
         .doc('userCollectionInitialDocument')
-        .set({'test': 'test'});
+        .set({'test': 'test', 'lang': lang});
+  }
+
+  Future<String> getLang() async {
+    //return "es";
+    Map toReturn =
+        (await userCollection.doc('userCollectionInitialDocument').get())
+            .data();
+    return toReturn == null ? "" : toReturn['lang'];
   }
 
   Future deleteSet(String flashcardsSet) async {
@@ -203,29 +224,41 @@ class DatabaseService {
   }
 }
 
-class _EditModalContents extends StatefulWidget {
-  final GlobalKey<FormState> fKey;
+class _EditPage extends StatefulWidget {
+  //final GlobalKey<FormState> fKey;
   final Key key;
+  final String appBarTitle;
+  final String mode;
+  final bool tickShouldPop;
+  final List<String> setNames;
   final String eName;
   final String eEmoji;
   final int eBgColor;
   final List<String> eFlashcards;
   final CollectionReference userCollection;
 
-  _EditModalContents(
-      {this.fKey,
-      this.key,
-      this.eName,
-      this.eEmoji,
-      this.eBgColor,
-      this.eFlashcards,
-      this.userCollection})
-      : super(key: key);
+  _EditPage({
+    //this.fKey,
+    this.key,
+    this.appBarTitle,
+    this.mode,
+    this.tickShouldPop,
+    this.setNames,
+    this.eName,
+    this.eEmoji,
+    this.eBgColor,
+    this.eFlashcards,
+    this.userCollection,
+  }) : super(key: key);
 
   @override
-  _EditModalContentsState createState() => _EditModalContentsState(
-        fKey,
+  _EditPageState createState() => _EditPageState(
+        //fKey,
         userCollection,
+        appBarTitle,
+        mode,
+        setNames,
+        tickShouldPop,
         eName: eName,
         eEmoji: eEmoji,
         eBgColor: eBgColor,
@@ -233,20 +266,30 @@ class _EditModalContents extends StatefulWidget {
       );
 }
 
-class _EditModalContentsState extends State<_EditModalContents> {
+class _EditPageState extends State<_EditPage> {
   String name;
   String initialName;
   String emoji;
   int bgColor;
-  Color bgColorClr;
-  int bgColorStr;
+  MaterialColor bgColorClr;
+  double bgColorStr;
   List<String> flashcards;
-  GlobalKey<FormState> key;
+  GlobalKey<FormState> frmKey;
   CollectionReference userCollection;
+  String appBarTitle;
+  String mode;
+  bool tickShouldPop;
+  List<String> setNames;
 
-  _EditModalContentsState(
-    GlobalKey<FormState> key,
-    CollectionReference userCollection, {
+  String _state;
+
+  _EditPageState(
+    //GlobalKey<FormState> key,
+    CollectionReference userCollection,
+    String appBarTitle,
+    String mode,
+    List<String> setNames,
+    bool tickShouldPop, {
     String eName,
     String eEmoji,
     int eBgColor,
@@ -256,15 +299,19 @@ class _EditModalContentsState extends State<_EditModalContents> {
     initialName = eName ?? "";
     emoji = eEmoji ?? '🗃️';
     bgColor = eBgColor ?? 0xFF6D4C41;
-    print("fdgdfhd${bgColor}");
+
     bgColorClr = ColorsService().intToColorData(bgColor)['color'];
-    print("bgColorClr");
-    print(bgColorClr);
+
     bgColorStr = ColorsService().intToColorData(bgColor)['str'];
-    print(bgColorStr);
+
     flashcards = eFlashcards ?? [];
-    this.key = key;
+    this.frmKey = GlobalKey<FormState>();
     this.userCollection = userCollection;
+    this.appBarTitle = appBarTitle ?? " ";
+    this.mode = mode ?? "view";
+    this._state = (mode == "view" || mode == "open") ? 'v' : 'e';
+    this.tickShouldPop = tickShouldPop;
+    this.setNames = setNames;
   }
 
   void changeEmoji(String e) {
@@ -275,188 +322,608 @@ class _EditModalContentsState extends State<_EditModalContents> {
     );
   }
 
+  FloatingActionButton start(String nm) {
+    return FloatingActionButton(
+      heroTag: AuthService().heroTagGenerator(),
+      onPressed: () {
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (BuildContext context) {
+            return FlashcardsService().startDialog(context);
+          },
+        );
+      },
+      child: Icon(Icons.play_arrow),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
-      key: key,
-      child: Stack(
-        children: [
-          Container(
-            height: MediaQuery.of(context).size.height * 2 / 5,
-            padding: EdgeInsets.symmetric(
-              vertical: 15.0,
-              horizontal: 20.0,
-            ),
-            child: Center(
-              child: ListView(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: 12.0,
-                    ),
-                    child: TextFormField(
-                      obscureText: false,
-                      validator: (val) => val.length < 3
-                          ? 'Set names must be longer than 3 charecters'
-                          : val.length <= 10
-                              ? null
-                              : 'Set names must be less than 11 charecters',
-                      onChanged: (val) {
-                        setState(() => name = val);
-                      },
-                      decoration: InputDecoration(
-                        suffixIcon: Icon(Icons.edit),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        labelText: 'Name',
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: 5,
-                      right: 5,
-                      bottom: 12.0,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          "Emoji: ",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Spacer(),
-                        FloatingActionButton(
-                          child: Text(
-                            emoji,
-                            style: TextStyle(fontSize: 24),
-                          ),
-                          onPressed: () async {
-                            await EmojiSelector(
-                              context: context,
-                            ).openSelector(changeEmoji);
+      key: frmKey,
+      child: Scaffold(
+        appBar: AppBar(
+          title: (mode == "edit")
+              ? Text("Create New Set: ")
+              : (_state == "e")
+                  ? Text("Edit: ")
+                  : Text(name),
+        ),
+        floatingActionButton: (mode == "view")
+            ? start(name)
+            : (mode == "edit")
+                ? FloatingActionButton(
+                    heroTag: AuthService().heroTagGenerator(),
+                    onPressed: () async {
+                      if (frmKey.currentState.validate()) {
+                        await userCollection.doc(name).set(
+                          {
+                            'emoji': emoji,
+                            'bgColor': bgColor,
+                            'flashcards': flashcards,
                           },
-                        )
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: 5,
-                      right: 5,
-                      bottom: 12.0,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          "Color: ",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        );
+                        if (initialName != "" && initialName != name) {
+                          await userCollection.doc(initialName).delete();
+                        }
+                        if (mode == "edit") {
+                          Navigator.of(context).pop();
+                        } else {
+                          _state = "v";
+                        }
+                      }
+                    },
+                    child: Icon(Icons.check),
+                  )
+                : (mode == "open")
+                    ? (_state == "e")
+                        ? FloatingActionButton(
+                            heroTag: AuthService().heroTagGenerator(),
+                            onPressed: () async {
+                              if (frmKey.currentState.validate()) {
+                                await userCollection.doc(name).set(
+                                  {
+                                    'emoji': emoji,
+                                    'bgColor': bgColor,
+                                    'flashcards': flashcards,
+                                  },
+                                );
+                                if (initialName != "" && initialName != name) {
+                                  await userCollection
+                                      .doc(initialName)
+                                      .delete();
+                                }
+                                if (mode == "edit") {
+                                  Navigator.of(context).pop();
+                                } else {
+                                  setState(() {
+                                    _state = "v";
+                                    initialName = name;
+                                  });
+                                }
+                              }
+                            },
+                            child: Icon(Icons.check),
+                          )
+                        : Container(
+                            //heroTag: AuthService().heroTagGenerator(),
+                            //onPressed: () {},
+                            color: Colors.transparent,
+                            //color: Colors.transparent,
+                            child: SizedBox(
+                              height: 60,
+                              width: 190,
+                              child: Center(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    start(name),
+                                    SizedBox(
+                                      width: 9,
+                                    ),
+                                    FloatingActionButton(
+                                      heroTag: AuthService().heroTagGenerator(),
+                                      onPressed: () {
+                                        setState(() {
+                                          _state = "e";
+                                        });
+                                      },
+                                      child: Icon(Icons.edit),
+                                    ),
+                                    SizedBox(
+                                      width: 9,
+                                    ),
+                                    FloatingActionButton(
+                                      heroTag: AuthService().heroTagGenerator(),
+                                      onPressed: () {
+                                        userCollection.doc(name).delete();
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Icon(Icons.delete),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                    : FloatingActionButton(
+                        heroTag: AuthService().heroTagGenerator(),
+                        onPressed: null,
+                        backgroundColor: Colors.black45,
+                      ),
+        body: SafeArea(
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
+            child: LayoutBuilder(builder: (
+              context,
+              constraints,
+            ) {
+              print("fegsfsdghrsehesthesrghregrwgsrgsdgsdfsf");
+              print(constraints.maxHeight);
+              print(constraints.maxWidth);
+              print(_state);
+              return SizedBox(
+                width: constraints.maxWidth,
+                height: constraints.maxHeight,
+                child: ListView(
+                  children: (_state == 'e')
+                      ? [
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              top: 4,
+                              bottom: 12.0,
+                            ),
+                            child: TextFormField(
+                              initialValue: initialName,
+                              obscureText: false,
+                              validator: (val) => val.length < 3
+                                  ? 'Set names must be longer than 3 charecters'
+                                  : val.length <= 10
+                                      ? (setNames.contains(val)
+                                              ? name != initialName
+                                              : false)
+                                          ? "You already have a set called $val"
+                                          : null
+                                      : 'Set names must be less than 11 charecters',
+                              onChanged: (val) {
+                                setState(() => name = val);
+                              },
+                              decoration: InputDecoration(
+                                suffixIcon: Icon(Icons.edit),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                labelText: 'Name',
+                              ),
+                            ),
                           ),
-                        ),
-                        Spacer(),
-                        FloatingActionButton(
-                          backgroundColor: bgColorClr,
-                          child: Icon(Icons.cancel),
-                          onPressed: () async {
-                            await showDialog(
-                              context: context,
-                              barrierDismissible: true,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text("Set Color: "),
-                                  content: Container(
-                                    width: MediaQuery.of(context).size.width *
-                                        0.85,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.23,
-                                    child: Padding(
-                                      padding: EdgeInsets.only(
-                                        left: 5,
-                                        right: 5,
-                                        bottom: 7,
-                                      ),
-                                      child: //Column(
-                                          //children: [
-                                          Container(
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              left: 5,
+                              right: 5,
+                              bottom: 12.0,
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  "Emoji: ",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Spacer(),
+                                FloatingActionButton(
+                                  heroTag: AuthService().heroTagGenerator(),
+                                  backgroundColor: color1[300],
+                                  child: Text(
+                                    emoji,
+                                    style: TextStyle(fontSize: 24),
+                                  ),
+                                  onPressed: () async {
+                                    await EmojiSelector(
+                                      context: context,
+                                    ).openSelector(changeEmoji);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              left: 5,
+                              right: 5,
+                              bottom: 8.0,
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  "Color: ",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Spacer(),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: 5,
+                              right: 5,
+                              bottom: 12,
+                            ),
+                            child: SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.85,
+                              child: Padding(
+                                padding: EdgeInsets.only(
+                                  left: 5,
+                                  right: 5,
+                                  bottom: 12,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Card(
+                                      child: SizedBox(
                                         width: double.infinity,
-                                        child: ListView(
-                                          shrinkWrap: true,
-                                          scrollDirection: Axis.horizontal,
-                                          padding: EdgeInsets.only(
-                                            left: 4,
-                                            right: 4,
-                                          ),
-                                          children: ColorsService().colorsList(
-                                            bgColorClr,
-                                            bgColorStr,
-                                            (int i) {
-                                              setState(
-                                                () {
-                                                  print(i);
-                                                  bgColor = ColorsService()
-                                                      .colors[i]['color']
-                                                      .value;
-                                                  print(bgColor);
-                                                  bgColorClr = ColorsService()
-                                                      .intToColorData(
-                                                          bgColor)['color'];
-                                                  print(bgColorClr);
-                                                  bgColorStr = ColorsService()
-                                                      .intToColorData(
-                                                          bgColor)['str'];
-                                                  print(bgColorStr);
-                                                },
-                                              );
-                                              Navigator.pop(context);
-                                            },
-                                          ),
+                                        child: Builder(
+                                          builder: (context) {
+                                            return SizedBox(
+                                              width: 200,
+                                              height: 70,
+                                              child: Center(
+                                                child: ListView(
+                                                  shrinkWrap: true,
+                                                  scrollDirection:
+                                                      Axis.horizontal,
+                                                  padding: EdgeInsets.only(
+                                                    left: 4,
+                                                    right: 4,
+                                                  ),
+                                                  children: ColorsService()
+                                                      .colorsList(
+                                                    bgColorClr,
+                                                    bgColorStr,
+                                                    (int i) {
+                                                      setState(
+                                                        () {
+                                                          bgColor = ColorsService()
+                                                              .colors[i]
+                                                                  ['color'][
+                                                                  bgColorStr
+                                                                      .toInt()]
+                                                              .value;
+
+                                                          bgColorClr =
+                                                              ColorsService()
+                                                                  .intToColorData(
+                                                            bgColor,
+                                                          )['color'];
+
+                                                          bgColorStr =
+                                                              ColorsService()
+                                                                  .intToColorData(
+                                                            bgColor,
+                                                          )['str'];
+                                                        },
+                                                      );
+                                                      //Navigator.pop(
+                                                      //context);
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
                                         ),
                                       ),
-                                      //],
-                                      //),
+                                    ),
+                                    Slider(
+                                      value: bgColorStr,
+                                      activeColor: Color(bgColor),
+                                      inactiveColor: bgColorClr[900],
+                                      min: 100,
+                                      max: 900,
+                                      divisions: 8,
+                                      label: bgColorStr.round().toString(),
+                                      onChanged: (double value) {
+                                        setState(() {
+                                          bgColor =
+                                              bgColorClr[value.toInt()].value;
+                                          bgColorStr = value;
+                                        });
+                                      },
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              left: 5,
+                              right: 5,
+                              bottom: 8.0,
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  "Flashcards: ",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Spacer(),
+                                FloatingActionButton(
+                                  heroTag: AuthService().heroTagGenerator(),
+                                  child: Icon(Icons.add),
+                                  backgroundColor: color1[300],
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return AddDialog(
+                                          flashCL: flashcards,
+                                          updateCards: (String v) {
+                                            setState(() {
+                                              print(flashcards);
+                                              flashcards.add(v);
+                                              print(flashcards);
+                                            });
+                                          },
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(
+                            width: constraints.maxWidth,
+                            height: (constraints.maxHeight - 395 > 70)
+                                ? constraints.maxHeight - 395
+                                : 75,
+                            child: Container(
+                              //color: Colors.amber,
+                              height: double.infinity,
+                              width: double.infinity,
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 5,
+                                  right: 5,
+                                  //bottom: 2.0,
+                                  //bottom: 8.0,
+                                ),
+                                child: Builder(builder: (context) {
+                                  return Container(
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    child: Card(
+                                      child: (flashcards != null
+                                              ? flashcards.isNotEmpty
+                                              : false)
+                                          ? ReorderableListView(
+                                              children: flashcards
+                                                  .map(
+                                                    (e) => Padding(
+                                                      key: ValueKey(e),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              1.0),
+                                                      child: Card(
+                                                        color: color1[50],
+                                                        child: ListTile(
+                                                          leading:
+                                                              Icon(Icons.menu),
+                                                          title: Text(
+                                                            e,
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                          trailing: IconButton(
+                                                              icon: Icon(
+                                                                  Icons.delete),
+                                                              onPressed: () {
+                                                                setState(
+                                                                  () {
+                                                                    flashcards
+                                                                        .removeAt(
+                                                                      flashcards
+                                                                          .indexOf(
+                                                                              e),
+                                                                    );
+                                                                  },
+                                                                );
+                                                              }),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                  .toList(),
+                                              onReorder: (
+                                                oldIndex,
+                                                newIndex,
+                                              ) {
+                                                setState(() {
+                                                  print(flashcards.length);
+                                                  print(newIndex);
+                                                  print(oldIndex);
+                                                  if (newIndex ==
+                                                      flashcards.length) {
+                                                    flashcards.add(
+                                                      flashcards
+                                                          .removeAt(oldIndex),
+                                                    );
+                                                  } else {
+                                                    flashcards.insert(
+                                                      newIndex,
+                                                      flashcards
+                                                          .removeAt(oldIndex),
+                                                    );
+                                                  }
+                                                });
+                                              },
+                                            )
+                                          : Center(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
+                                                child: Text(
+                                                  "Press the + buttton to add flashcards to your set",
+                                                ),
+                                              ),
+                                            ),
+                                    ),
+                                  );
+                                }),
+                              ),
+                            ),
+                          )
+                          /*
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        left: 5,
+                        right: 5,
+                        bottom: 2.0,
+                        //bottom: 8.0,
+                      ),
+                      child: Builder(builder: (context) {
+                        return Container(
+                          width: double.infinity,
+                          height: double.infinity,
+                          child: Card(
+                            child: ReorderableListView(
+                              children: flashcards
+                                  .map(
+                                    (e) => Card(
+                                      key: ValueKey(e),
+                                      child: ListTile(
+                                        leading: Icon(Icons.menu),
+                                        title: Text(e),
+                                        trailing: IconButton(
+                                            icon: Icon(Icons.delete),
+                                            onPressed: () {
+                                              setState(
+                                                () {
+                                                  flashcards.removeAt(
+                                                    flashcards.indexOf(e),
+                                                  );
+                                                },
+                                              );
+                                            }),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onReorder: (
+                                oldIndex,
+                                newIndex,
+                              ) {
+                                setState(() {
+                                  flashcards.insert(
+                                    newIndex,
+                                    flashcards.removeAt(oldIndex),
+                                  );
+                                });
+                              },
+                            ),
+                          ),
+                        );
+                      }),
+                    ),*/
+                        ]
+                      : flashcards
+                          .map(
+                            (e) => Padding(
+                              padding: EdgeInsets.all(2),
+                              child: Card(
+                                color: color1[50],
+                                child: ListTile(
+                                  title: Text(
+                                    e,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                );
-                              },
-                            );
-                          },
-                        )
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                ),
+              );
+            }),
           ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: 15,
-                bottom: 15,
-              ),
-              child: FloatingActionButton(
-                onPressed: () async {
-                  await userCollection.doc(name).set(
-                    {
-                      'emoji': emoji,
-                      'bgColor': bgColor,
-                      'flashcards': flashcards,
-                    },
-                  );
-                  if (initialName != "" && initialName != name) {
-                    await userCollection.doc(initialName).delete();
-                  }
-                },
-                child: Icon(Icons.check),
-              ),
+        ),
+      ),
+    );
+  }
+}
+
+class AddDialog extends StatefulWidget {
+  final Null Function(String) updateCards;
+  final List<String> flashCL;
+
+  AddDialog({Key key, this.updateCards, this.flashCL}) : super(key: key);
+
+  @override
+  _AddDialogState createState() =>
+      _AddDialogState(updateCards: updateCards, flashCL: flashCL);
+}
+
+class _AddDialogState extends State<AddDialog> {
+  final _addFormKey = GlobalKey<FormState>();
+  var cardName = "";
+  final Null Function(String) updateCards;
+  final List<String> flashCL;
+
+  _AddDialogState({this.updateCards, this.flashCL});
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _addFormKey,
+      child: AlertDialog(
+        title: Text(
+          "Add Flashcard",
+        ),
+        content: TextFormField(
+          validator: (val) => val.isEmpty
+              ? 'This field can\'t be empty'
+              : ((flashCL != null) ? flashCL.contains(val) : false)
+                  ? "This Card is already in the set"
+                  : null,
+          onChanged: (val) {
+            setState(() => cardName = val);
+          },
+          decoration: InputDecoration(
+            prefixIcon: Icon(Icons.card_membership),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
             ),
-          )
+            //labelText: '',
+          ),
+        ),
+        actions: [
+          FlatButton(
+            child: Text("Add"),
+            onPressed: () {
+              if (_addFormKey.currentState.validate()) {
+                print(flashCL);
+                updateCards(cardName);
+                Navigator.of(context).pop();
+              }
+            },
+          ),
         ],
       ),
     );
