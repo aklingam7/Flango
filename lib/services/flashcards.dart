@@ -371,44 +371,118 @@ class _CardPageState extends State<CardPage> {
                           ),
                         );
                       }*/
-                      return Align(
-                        alignment: Alignment.center,
-                        child: Padding(
-                          padding: EdgeInsets.all(30),
-                          child: AspectRatio(
-                            aspectRatio: 3 / 2,
-                            child: GestureDetector(
-                              onTap: () => setState(() {
-                                if (taps + 1 != snapshot.data.length) {
-                                  taps = taps + 1;
-                                } else {
-                                  taps = 0;
-                                }
-                              }),
-                              child: Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15.0),
-                                  side: BorderSide(
-                                    width: 2,
-                                    color: color1[300],
-                                  ),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: LayoutBuilder(
+                      return ListView(
+                        children: [
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                                maxHeight:
+                                    MediaQuery.of(context).size.height * 0.8),
+                            child: Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(30),
+                                child: LayoutBuilder(
                                     builder: (context, constraints) {
-                                      return Center(
-                                        child: Text(
-                                          snapshot.data[taps],
+                                  return SizedBox(
+                                    width: constraints.maxWidth,
+                                    height: constraints.maxHeight,
+                                    child: Center(
+                                      child: DefaultTabController(
+                                        length:
+                                            (snapshot.data.length / 2).toInt(),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Spacer(),
+                                            SizedBox(
+                                              width: constraints.maxWidth - 70,
+                                              height:
+                                                  (constraints.maxWidth - 70) *
+                                                      0.66,
+                                              child: TabBarView(children: [
+                                                for (var i = 0;
+                                                    i <
+                                                        (snapshot.data.length /
+                                                                2)
+                                                            .toInt();
+                                                    i += 1)
+                                                  AspectCard(
+                                                      snapshot: snapshot, i: i),
+                                              ]),
+                                            ),
+                                            SizedBox(
+                                              height: 10,
+                                            ),
+                                            Spacer(),
+                                            SizedBox(
+                                              height: 50,
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  .5,
+                                              child: Column(
+                                                children: [
+                                                  TabBar(
+                                                    isScrollable: true,
+                                                    indicatorPadding:
+                                                        EdgeInsets.all(2),
+                                                    indicator: BoxDecoration(
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color:
+                                                              Color(0x19000000),
+                                                          blurRadius: 3,
+                                                          spreadRadius: 2,
+                                                        )
+                                                      ],
+                                                      border: Border.all(
+                                                        color:
+                                                            Colors.transparent,
+                                                        width: 2,
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                              Radius.circular(
+                                                                  18)),
+                                                      color: color1[300],
+                                                    ),
+                                                    indicatorColor:
+                                                        Colors.transparent,
+                                                    indicatorWeight: 2,
+                                                    //indicatorColor: Colors.transparent,
+                                                    tabs: [
+                                                      for (var i = 0;
+                                                          i <
+                                                              (snapshot.data
+                                                                          .length /
+                                                                      2)
+                                                                  .toInt();
+                                                          i += 1)
+                                                        Tab(
+                                                            child: Container(
+                                                                //color: color1[900],
+                                                                child: FittedBox(
+                                                                    fit: BoxFit.contain,
+                                                                    child: Icon(
+                                                                      Icons
+                                                                          .circle,
+                                                                      color: color1[
+                                                                          200],
+                                                                    )))),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      );
-                                    },
-                                  ),
-                                ),
+                                      ),
+                                    ),
+                                  );
+                                }),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       );
                     } else {
                       return Align(
@@ -420,5 +494,83 @@ class _CardPageState extends State<CardPage> {
                   ? null
                   : null,
         ));
+  }
+}
+
+class AspectCard extends StatefulWidget {
+  AspectCard({
+    Key key,
+    //@required this.taps,
+    @required this.i,
+    @required this.snapshot,
+  }) : super(key: key);
+
+  int taps = 0;
+  final int i;
+  final AsyncSnapshot<List<String>> snapshot;
+
+  @override
+  _AspectCardState createState() => _AspectCardState();
+}
+
+class _AspectCardState extends State<AspectCard> {
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 3 / 2,
+      child: GestureDetector(
+        onTap: () => setState(() {
+          if (widget.taps + 1 != 2) {
+            widget.taps = widget.taps + 1;
+          } else {
+            widget.taps = 0;
+          }
+        }),
+        child: Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+            side: BorderSide(
+              width: 2,
+              color: color1[300],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Center(
+                  child: (widget.taps == 0)
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              widget.snapshot.data[widget.taps + widget.i * 2],
+                              style: TextStyle(
+                                  fontSize: constraints.maxWidth * 0.135),
+                            ),
+                            SizedBox(
+                              height: 20,
+                            ),
+                            Text(
+                              "Tap to see the translation",
+                              style: TextStyle(
+                                  fontSize: constraints.maxWidth * 0.065),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          widget.snapshot.data[widget.taps + widget.i * 2],
+                          style: TextStyle(
+                            fontSize: constraints.maxWidth * 0.124,
+                            color: color1[600],
+                          ),
+                        ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
