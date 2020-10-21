@@ -21,7 +21,10 @@ class _StartDialog extends StatefulWidget {
 }
 
 class _StartDialogState extends State<_StartDialog> {
-  List<bool> isSelected = [true, false, false];
+  List<bool> isSelected = [
+    true,
+    false,
+  ];
   Map pmMap;
 
   _StartDialogState(Map pmMap) {
@@ -92,7 +95,7 @@ class _StartDialogState extends State<_StartDialog> {
                       bottom: 8,
                     ),
                     child: Text(
-                      "MCQ Test: ",
+                      "Test: ",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -106,41 +109,7 @@ class _StartDialogState extends State<_StartDialog> {
                       bottom: 14,
                     ),
                     child: Text(
-                      "Select correct the translation for each card out of four options for a score at the end.",
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            RotatedBox(
-              quarterTurns: 3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(
-                      top: 14,
-                      left: 14,
-                      right: 14,
-                      bottom: 8,
-                    ),
-                    child: Text(
-                      "Fill In Test: ",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: 14,
-                      right: 14,
-                      bottom: 14,
-                    ),
-                    child: Text(
-                      "Fill in the translations for each card for a score at the end.",
+                      "Fill in the translation of each card for a score at the end.",
                       style: TextStyle(fontSize: 16),
                     ),
                   ),
@@ -175,9 +144,7 @@ class _StartDialogState extends State<_StartDialog> {
                 ? 1
                 : (isSelected[1] == true)
                     ? 2
-                    : (isSelected[2] == true)
-                        ? 3
-                        : 4;
+                    : 4;
             print(
                 "rehergherserhsdrhsdthdsfshbsdfhgsyhe56hgresghserhesrhgserhs");
             print(pmMap['context']);
@@ -224,7 +191,9 @@ class _CardPageState extends State<CardPage> {
   Future<List<String>> fBuilder;
 
   int taps = 0;
-  int score = 0;
+  int score;
+  bool submitted = false;
+  bool over = false;
 
   _CardPageState({
     this.cMode,
@@ -253,7 +222,7 @@ class _CardPageState extends State<CardPage> {
     return cardList;
   }
 
-  Future<List<Text Function(double)>> updateMCQList() async {
+  /*Future<List<Text Function(double)>> updateMCQList() async {
     //var fCardList = [];
     //var qCardList = [];
     //var a1CardList = [];
@@ -279,87 +248,86 @@ class _CardPageState extends State<CardPage> {
       //a1CardList,
       //a2CardList,
     ];
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-        onWillPop: () async {
-          return (cMode == 1)
-              ? true
-              : await showDialog(
-                    context: context,
-                    builder: (context) => new AlertDialog(
-                      title: Text('Confirmation: '),
-                      content: Text(
-                          'Are you sure you want to exit. Your progress will be lost.'),
-                      actions: <Widget>[
-                        FlatButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          child: Text("No"),
-                        ),
-                        //SizedBox(height: 16),
-                        FlatButton(
-                          onPressed: () => Navigator.of(context).pop(true),
-                          child: Text("Yes"),
-                        ),
-                      ],
-                    ),
-                  ) ??
-                  false;
-        },
-        child: Scaffold(
-          appBar: (cMode == 1)
-              ? AppBar(
-                  centerTitle: true,
-                  title: Text("Practice"),
-                )
-              : AppBar(
-                  automaticallyImplyLeading: false,
-                  centerTitle: true,
-                  actions: [
-                    IconButton(
-                        icon: Icon(Icons.exit_to_app),
-                        onPressed: () async {
-                          var y = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text('Confirmation: '),
-                              content: Text(
-                                  'Are you sure you want to exit. Your progress will be lost.'),
-                              actions: <Widget>[
-                                FlatButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(false),
-                                  child: Text("No"),
-                                ),
-                                //SizedBox(height: 16),
-                                FlatButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(true),
-                                  child: Text("Yes"),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (y) {
-                            Navigator.pop(context);
-                          }
-                        })
-                  ],
-                  title: Text("${(cMode == 2) ? "Test" : "Test"}"),
-                ),
-          body: (cMode == 1)
-              ? FutureBuilder<List<String>>(
-                  //initialData: null,
-                  future: updatePracticeList(pmMap['flashcards']),
-                  builder: (context, snapshot) {
-                    print(snapshot.connectionState);
-                    //print(snapshot.data.length);
-                    if (snapshot.data != null
-                        ? snapshot.data.length == pmMap['flashcards'].length * 2
-                        : false) {
-                      /*if (snapshot.hasError) {
+      onWillPop: () async {
+        return (cMode == 1 || over == true)
+            ? true
+            : await showDialog(
+                  context: context,
+                  builder: (context) => new AlertDialog(
+                    title: Text('Confirmation: '),
+                    content: Text(
+                        'Are you sure you want to exit. Your progress will be lost.'),
+                    actions: <Widget>[
+                      FlatButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: Text("No"),
+                      ),
+                      //SizedBox(height: 16),
+                      FlatButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: Text("Yes"),
+                      ),
+                    ],
+                  ),
+                ) ??
+                false;
+      },
+      child: Scaffold(
+        appBar: (cMode == 1)
+            ? AppBar(
+                centerTitle: true,
+                title: Text("Practice"),
+              )
+            : AppBar(
+                automaticallyImplyLeading: false,
+                centerTitle: true,
+                actions: [
+                  IconButton(
+                      icon: Icon(Icons.exit_to_app),
+                      onPressed: () async {
+                        var y = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text('Confirmation: '),
+                            content: Text(
+                                'Are you sure you want to exit. Your progress will be lost.'),
+                            actions: <Widget>[
+                              FlatButton(
+                                onPressed: () =>
+                                    Navigator.of(context).pop(false),
+                                child: Text("No"),
+                              ),
+                              //SizedBox(height: 16),
+                              FlatButton(
+                                onPressed: () =>
+                                    Navigator.of(context).pop(true),
+                                child: Text("Yes"),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (y) {
+                          Navigator.pop(context);
+                        }
+                      })
+                ],
+                title: Text("${(cMode == 2) ? "Test" : "Test"}"),
+              ),
+        body: FutureBuilder<List<String>>(
+            //initialData: null,
+            future: updatePracticeList(pmMap['flashcards']),
+            builder: (context, snapshot) {
+              print(snapshot.connectionState);
+              //print(snapshot.data.length);
+              if (snapshot.data != null
+                  ? snapshot.data.length == pmMap['flashcards'].length * 2
+                  : false) {
+                /*if (snapshot.hasError) {
                         return Align(
                           alignment: Alignment.center,
                           child: Padding(
@@ -371,7 +339,9 @@ class _CardPageState extends State<CardPage> {
                           ),
                         );
                       }*/
-                      return ListView(
+                //print(cMode);
+                return (cMode == 1)
+                    ? ListView(
                         children: [
                           ConstrainedBox(
                             constraints: BoxConstraints(
@@ -483,17 +453,36 @@ class _CardPageState extends State<CardPage> {
                             ),
                           ),
                         ],
+                      )
+                    : AspectFormCard(
+                        snapshot: snapshot,
+                        setOver: () {
+                          setState(() {
+                            over = true;
+                          });
+                        },
+                        over: over,
                       );
-                    } else {
-                      return Align(
-                          alignment: Alignment.center,
-                          child: CircularProgressIndicator());
-                    }
-                  })
-              : (cMode == 2)
-                  ? null
-                  : null,
-        ));
+              } else {
+                //TODO: conectivity package mobile data recomendation
+                return Align(
+                    alignment: Alignment.center,
+                    child: CircularProgressIndicator());
+              }
+            }),
+        /*floatingActionButton: (cMode == 2)
+            ? FloatingActionButton.extended(
+                onPressed: () {
+                  setState(() {
+                    submitted = true;
+                  });
+                },
+                label: Text("Submit"),
+                icon: Icon(Icons.check),
+              )
+            : null,*/
+      ),
+    );
   }
 }
 
@@ -570,6 +559,342 @@ class _AspectCardState extends State<AspectCard> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class AspectFormCard extends StatefulWidget {
+  AspectFormCard({
+    Key key,
+    //@required this.taps,
+
+    @required this.snapshot,
+    @required this.setOver,
+    @required this.over,
+  }) : super(key: key);
+
+  int taps = 0;
+
+  final AsyncSnapshot<List<String>> snapshot;
+  final Function setOver;
+  final bool over;
+
+  @override
+  _AspectFormCardState createState() => _AspectFormCardState();
+}
+
+class _AspectFormCardState extends State<AspectFormCard> {
+  List<String> answer = [];
+  int score;
+  var frmKey = GlobalKey<FormState>();
+
+  /*FloatingActionButton.extended(
+                onPressed: () {
+                  setState(() {
+                    submitted = true;
+                  });
+                },
+                label: Text("Submit"),
+                icon: Icon(Icons.check),
+              )*/
+
+  @override
+  void initState() {
+    super.initState();
+    int sdf = 0;
+    for (var item in widget.snapshot.data) {
+      if (sdf % 2 == 0) {
+        answer.add(item);
+      }
+      sdf = sdf + 1;
+    }
+
+    //answer = widget.snapshot.data.where((element) => false).map((e) => " ").toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: frmKey,
+      child: Stack(
+        children: [
+          ListView(
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.8),
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(30),
+                    child: LayoutBuilder(builder: (context, constraints) {
+                      return SizedBox(
+                        width: constraints.maxWidth,
+                        height: constraints.maxHeight,
+                        child: Center(
+                          child: DefaultTabController(
+                            length: (widget.snapshot.data.length / 2).toInt(),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  (score == null) ? " " : "Score",
+                                  style: TextStyle(fontSize: 40),
+                                ),
+                                Text(
+                                  (score == null) ? " " : "$score",
+                                  style: TextStyle(fontSize: 36),
+                                ),
+                                Spacer(),
+                                SizedBox(
+                                  width: constraints.maxWidth - 70,
+                                  height: (constraints.maxWidth - 70) * 1.3,
+                                  child: TabBarView(children: [
+                                    for (var i = 0;
+                                        i <
+                                            (widget.snapshot.data.length / 2)
+                                                .toInt();
+                                        i += 1)
+                                      Align(
+                                        alignment: Alignment.center,
+                                        child: AspectRatio(
+                                          aspectRatio: 24 / 29,
+                                          child: Card(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(15.0),
+                                              side: BorderSide(
+                                                width: 2,
+                                                color: color1[300],
+                                              ),
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Container(
+                                                  child: AspectRatio(
+                                                    aspectRatio: 3 / 2,
+                                                    child: GestureDetector(
+                                                      onTap: () {},
+                                                      child: Card(
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      15.0),
+                                                          side: BorderSide(
+                                                            width: 2,
+                                                            color: color1[300],
+                                                          ),
+                                                        ),
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(8.0),
+                                                          child: LayoutBuilder(
+                                                            builder: (context,
+                                                                constraints) {
+                                                              return Center(
+                                                                child:
+                                                                    (widget.taps ==
+                                                                            0)
+                                                                        ? Column(
+                                                                            mainAxisSize:
+                                                                                MainAxisSize.min,
+                                                                            children: [
+                                                                              Text(
+                                                                                widget.snapshot.data[widget.taps + i * 2],
+                                                                                style: TextStyle(fontSize: constraints.maxWidth * 0.135),
+                                                                              ),
+                                                                              /*SizedBox(
+                                                height: 20,
+                                              ),
+                                              Text(
+                                                "Tap to see the translation",
+                                                style: TextStyle(
+                                                    fontSize: constraints.maxWidth * 0.065),
+                                              ),*/
+                                                                            ],
+                                                                          )
+                                                                        : Text(
+                                                                            widget.snapshot.data[widget.taps +
+                                                                                i * 2],
+                                                                            style:
+                                                                                TextStyle(
+                                                                              fontSize: constraints.maxWidth * 0.124,
+                                                                              color: color1[600],
+                                                                            ),
+                                                                          ),
+                                                              );
+                                                            },
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Spacer(),
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: TextFormField(
+                                                    validator: (val) => widget
+                                                                .snapshot
+                                                                .data[
+                                                                    (i * 2) + 1]
+                                                                .toUpperCase() !=
+                                                            val.toUpperCase()
+                                                        ? 'Incorrect'
+                                                        : null,
+                                                    onChanged: (val) {
+                                                      setState(() =>
+                                                          answer[i] = val);
+                                                    },
+                                                    decoration: InputDecoration(
+                                                      //suffixIcon: Icon(Icons.edit),
+                                                      border:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(10),
+                                                      ),
+                                                      labelText: 'Answer',
+                                                    ),
+                                                  ),
+                                                ),
+                                                Spacer(),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                  ]),
+                                ),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                Spacer(),
+                                SizedBox(
+                                  height: 50,
+                                  width: MediaQuery.of(context).size.width * .5,
+                                  child: Column(
+                                    children: [
+                                      TabBar(
+                                        isScrollable: true,
+                                        indicatorPadding: EdgeInsets.all(2),
+                                        indicator: BoxDecoration(
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Color(0x19000000),
+                                              blurRadius: 3,
+                                              spreadRadius: 2,
+                                            )
+                                          ],
+                                          border: Border.all(
+                                            color: Colors.transparent,
+                                            width: 2,
+                                          ),
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(18)),
+                                          color: color1[300],
+                                        ),
+                                        indicatorColor: Colors.transparent,
+                                        indicatorWeight: 2,
+                                        //indicatorColor: Colors.transparent,
+                                        tabs: [
+                                          for (var i = 0;
+                                              i <
+                                                  (widget.snapshot.data.length /
+                                                          2)
+                                                      .toInt();
+                                              i += 1)
+                                            Tab(
+                                                child: Container(
+                                                    //color: color1[900],
+                                                    child: FittedBox(
+                                                        fit: BoxFit.contain,
+                                                        child: Icon(
+                                                          Icons.circle,
+                                                          color: color1[200],
+                                                        )))),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: FloatingActionButton.extended(
+                backgroundColor: (widget.over) ? Colors.grey : color1[300],
+                onPressed: widget.over
+                    ? null
+                    : () {
+                        showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text("Confirmation:"),
+                                content:
+                                    Text("Are you sure you want to submit?"),
+                                actions: [
+                                  FlatButton(
+                                      onPressed: () {
+                                        int xd = 0;
+                                        print(answer.length);
+                                        score = 0;
+                                        for (var iAnswer in answer) {
+                                          print(iAnswer.toUpperCase());
+                                          print(widget
+                                              .snapshot.data[(xd * 2) + 1]
+                                              .toUpperCase());
+                                          if (iAnswer.toUpperCase() ==
+                                              widget.snapshot.data[(xd * 2) + 1]
+                                                  .toUpperCase()) {
+                                            score = score + 1;
+                                          }
+                                          xd = xd + 1;
+                                        }
+                                        widget.setOver();
+                                        setState(() {
+                                          score = score ?? 0;
+                                        });
+                                        if (frmKey.currentState.validate()) {}
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text("Yes")),
+                                  FlatButton(
+                                    child: Text("No"),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  )
+                                ],
+                              );
+                            });
+                        //print(iAnswer.toUpperCase());
+                        //print(answer);
+                        //print(widget.snapshot.data[(answer.indexOf(iAnswer) * 2) + 1]
+                        //.toUpperCase());
+                      },
+                label: Text("Submit"),
+                icon: Icon(Icons.check),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

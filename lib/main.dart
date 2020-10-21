@@ -667,43 +667,100 @@ class _AppWrapperState extends State<AppWrapper> {
                                                   ),
                                                 )),
                                           ),
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              FloatingActionButton.extended(
-                                                heroTag: AuthService()
-                                                    .heroTagGenerator(),
-                                                backgroundColor: color1[300],
-                                                onPressed: () async {
-                                                  await showDialog(
-                                                      context: context,
-                                                      builder: (context) =>
-                                                          WelcomeDialog(
-                                                              uid: currentUser
-                                                                  .uid));
-                                                },
-                                                label: Text("Change Language"),
-                                                icon: Icon(Icons.language),
-                                              ),
-                                              SizedBox(
-                                                width: 10,
-                                              ),
-                                              FloatingActionButton.extended(
-                                                heroTag: AuthService()
-                                                    .heroTagGenerator(),
-                                                backgroundColor: color1[300],
-                                                onPressed: () async {
-                                                  setState(
-                                                      () => loading = true);
-                                                  await _auth.signOut();
-                                                  setState(
-                                                      () => loading = false);
-                                                },
-                                                label: Text("Sign Out"),
-                                                icon: Icon(Icons.exit_to_app),
-                                              )
-                                            ],
-                                          )
+                                          LayoutBuilder(
+                                              builder: (context, constraints) {
+                                            return (constraints.maxWidth < 200)
+                                                ? Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      FloatingActionButton
+                                                          .extended(
+                                                        heroTag: AuthService()
+                                                            .heroTagGenerator(),
+                                                        backgroundColor:
+                                                            color1[300],
+                                                        onPressed: () async {
+                                                          await showDialog(
+                                                              context: context,
+                                                              builder: (context) =>
+                                                                  WelcomeDialog(
+                                                                      uid: currentUser
+                                                                          .uid));
+                                                        },
+                                                        label: Text(
+                                                            "Change Language"),
+                                                        icon: Icon(
+                                                            Icons.language),
+                                                      ),
+                                                      SizedBox(
+                                                        width: 10,
+                                                      ),
+                                                      FloatingActionButton
+                                                          .extended(
+                                                        heroTag: AuthService()
+                                                            .heroTagGenerator(),
+                                                        backgroundColor:
+                                                            color1[300],
+                                                        onPressed: () async {
+                                                          setState(() =>
+                                                              loading = true);
+                                                          await _auth.signOut();
+                                                          setState(() =>
+                                                              loading = false);
+                                                        },
+                                                        label: Text("Sign Out"),
+                                                        icon: Icon(
+                                                            Icons.exit_to_app),
+                                                      )
+                                                    ],
+                                                  )
+                                                : Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      FloatingActionButton
+                                                          .extended(
+                                                        heroTag: AuthService()
+                                                            .heroTagGenerator(),
+                                                        backgroundColor:
+                                                            color1[300],
+                                                        onPressed: () async {
+                                                          await showDialog(
+                                                              context: context,
+                                                              builder: (context) =>
+                                                                  WelcomeDialog(
+                                                                      uid: currentUser
+                                                                          .uid));
+                                                        },
+                                                        label: Text(
+                                                            "Change Language"),
+                                                        icon: Icon(
+                                                            Icons.language),
+                                                      ),
+                                                      SizedBox(
+                                                        height: 10,
+                                                      ),
+                                                      FloatingActionButton
+                                                          .extended(
+                                                        heroTag: AuthService()
+                                                            .heroTagGenerator(),
+                                                        backgroundColor:
+                                                            color1[300],
+                                                        onPressed: () async {
+                                                          setState(() =>
+                                                              loading = true);
+                                                          await _auth.signOut();
+                                                          setState(() =>
+                                                              loading = false);
+                                                        },
+                                                        label: Text("Sign Out"),
+                                                        icon: Icon(
+                                                            Icons.exit_to_app),
+                                                      )
+                                                    ],
+                                                  );
+                                          })
                                         ],
                                       ),
                                     ),
