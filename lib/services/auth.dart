@@ -21,7 +21,7 @@ class AuthService {
       context: sdcontext,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return _WelcomeDialog(
+        return WelcomeDialog(
           uid: uid,
         );
       },
@@ -170,15 +170,15 @@ class AuthService {
   }
 }
 
-class _WelcomeDialog extends StatefulWidget {
+class WelcomeDialog extends StatefulWidget {
   final String uid;
-  _WelcomeDialog({Key key, this.uid}) : super(key: key);
+  WelcomeDialog({Key key, this.uid}) : super(key: key);
 
   @override
   _WelcomeDialogState createState() => _WelcomeDialogState(uid: uid);
 }
 
-class _WelcomeDialogState extends State<_WelcomeDialog> {
+class _WelcomeDialogState extends State<WelcomeDialog> {
   final String uid;
 
   _WelcomeDialogState({this.uid});

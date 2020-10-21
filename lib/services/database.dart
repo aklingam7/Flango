@@ -1,3 +1,5 @@
+//import 'dart:html';
+
 import 'package:flango/main.dart';
 import 'package:flango/services/auth.dart';
 import 'package:flango/services/colors.dart';
@@ -194,9 +196,14 @@ class DatabaseService {
   }
 
   Future initializeCollection(String lang) async {
-    return await userCollection
-        .doc('userCollectionInitialDocument')
-        .set({'test': 'test', 'lang': lang});
+    return await userCollection.doc('userCollectionInitialDocument').set({
+      'test': 'test',
+      'tFcrds': 0,
+      'tFcrdSts': 0,
+      'pSsns': 0,
+      'tSsns': 0,
+      'lang': lang,
+    });
   }
 
   Future<String> getLang() async {
@@ -206,6 +213,12 @@ class DatabaseService {
             .data();
     return toReturn == null ? "" : toReturn['lang'];
   }
+
+  /*Future updateUserData(c, s) async {
+    await userCollection
+        .doc('userCollectionInitialDocument')
+        .set({'tFcrds': c, 'tFcrdSts': s});
+  }*/
 
   Future deleteSet(String flashcardsSet) async {
     return await userCollection.doc(flashcardsSet).delete();
@@ -219,9 +232,9 @@ class DatabaseService {
     return userCollection.snapshots();
   }
 
-  Stream<DocumentSnapshot> selectedSetChangesStream(String name) {
-    return userCollection.doc(name).snapshots();
-  }
+  /*Stream<DocumentSnapshot> userDataChangesStream() {
+    return userCollection.doc('userCollectionInitialDocument').snapshots();
+  }*/
 }
 
 class _EditPage extends StatefulWidget {
@@ -322,18 +335,39 @@ class _EditPageState extends State<_EditPage> {
     );
   }
 
-  FloatingActionButton start(String nm) {
+  FloatingActionButton start(String nm, Null Function(Scaffold) psdCtx) {
+    //print(flashcards == null ? true : flashcards.isEmpty);
+    //print("objectdfsgserg");
     return FloatingActionButton(
+      backgroundColor: (flashcards == null ? true : flashcards.isEmpty)
+          ? Colors.blueGrey
+          : null,
       heroTag: AuthService().heroTagGenerator(),
-      onPressed: () {
-        showDialog(
-          context: context,
-          barrierDismissible: true,
-          builder: (BuildContext context) {
-            return FlashcardsService().startDialog(context);
-          },
-        );
-      },
+      onPressed: (flashcards == null ? true : flashcards.isEmpty)
+          ? null
+          : () async {
+              var x = await showDialog<int>(
+                context: context,
+                barrierDismissible: true,
+                builder: (BuildContext context) {
+                  return FlashcardsService().startDialog({
+                    'name': name,
+                    'flashcards': flashcards,
+                    'context': psdCtx
+                  });
+                },
+              );
+              if (x == 1 || x == 2 || x == 3) {
+                print(x);
+                Navigator.push(context, MaterialPageRoute(builder: (cbv) {
+                  return CardPage(x, {
+                    'name': name,
+                    'flashcards': flashcards,
+                    'uc': userCollection,
+                  });
+                }));
+              }
+            },
       child: Icon(Icons.play_arrow),
     );
   }
@@ -351,7 +385,20 @@ class _EditPageState extends State<_EditPage> {
                   : Text(name),
         ),
         floatingActionButton: (mode == "view")
-            ? start(name)
+            ? start(
+                name,
+                (Scaffold x) {
+                  print("sdfjsjkjgasduigvjarfhasjdjdrgndguigvl");
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (xctx) {
+                        return x;
+                      },
+                    ),
+                  );
+                },
+              )
             : (mode == "edit")
                 ? FloatingActionButton(
                     heroTag: AuthService().heroTagGenerator(),
@@ -418,7 +465,20 @@ class _EditPageState extends State<_EditPage> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    start(name),
+                                    start(name, (Scaffold x) {
+                                      print(
+                                          "sdfjsjkjgasduigvjarfhasjdjdrgndguigvl");
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (xctx) {
+                                            return x;
+                                          },
+                                        ),
+                                      );
+                                      print(
+                                          "sdfjsjkjgasduigvjarfhasjdjdrgndguigvl");
+                                    }),
                                     SizedBox(
                                       width: 9,
                                     ),
@@ -436,9 +496,37 @@ class _EditPageState extends State<_EditPage> {
                                     ),
                                     FloatingActionButton(
                                       heroTag: AuthService().heroTagGenerator(),
-                                      onPressed: () {
-                                        userCollection.doc(name).delete();
-                                        Navigator.of(context).pop();
+                                      onPressed: () async {
+                                        print("object");
+                                        await showDialog(
+                                            context: context,
+                                            builder: (tcontext) => AlertDialog(
+                                                    title:
+                                                        Text('Confirmation: '),
+                                                    content: Text(
+                                                        'Are you sure you want to delete this set?'),
+                                                    actions: <Widget>[
+                                                      FlatButton(
+                                                          onPressed: () {
+                                                            userCollection
+                                                                .doc(name)
+                                                                .delete();
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop();
+                                                            Navigator.of(
+                                                                    tcontext)
+                                                                .pop();
+                                                          },
+                                                          child: Text("Yes")),
+                                                      FlatButton(
+                                                          onPressed: () {
+                                                            Navigator.of(
+                                                                    tcontext)
+                                                                .pop();
+                                                          },
+                                                          child: Text("No"))
+                                                    ]));
                                       },
                                       child: Icon(Icons.delete),
                                     ),
@@ -467,327 +555,349 @@ class _EditPageState extends State<_EditPage> {
               return SizedBox(
                 width: constraints.maxWidth,
                 height: constraints.maxHeight,
-                child: ListView(
-                  children: (_state == 'e')
-                      ? [
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              top: 4,
-                              bottom: 12.0,
-                            ),
-                            child: TextFormField(
-                              initialValue: initialName,
-                              obscureText: false,
-                              validator: (val) => val.length < 3
-                                  ? 'Set names must be longer than 3 charecters'
-                                  : val.length <= 10
-                                      ? (setNames.contains(val)
-                                              ? name != initialName
-                                              : false)
-                                          ? "You already have a set called $val"
-                                          : null
-                                      : 'Set names must be less than 11 charecters',
-                              onChanged: (val) {
-                                setState(() => name = val);
-                              },
-                              decoration: InputDecoration(
-                                suffixIcon: Icon(Icons.edit),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                labelText: 'Name',
-                              ),
-                            ),
+                child: (flashcards.length == 0 && _state != 'e')
+                    ? Align(
+                        alignment: Alignment.center,
+                        child: Padding(
+                          padding: const EdgeInsets.all(30.0),
+                          child: Text(
+                            "Tap on the edit icon to add flashcards to this set.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 28),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              left: 5,
-                              right: 5,
-                              bottom: 12.0,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  "Emoji: ",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : ListView(
+                        children: (_state == 'e')
+                            ? [
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 4,
+                                    bottom: 12.0,
+                                  ),
+                                  child: TextFormField(
+                                    initialValue: initialName,
+                                    obscureText: false,
+                                    validator: (val) => val.length < 3
+                                        ? 'Set names must be longer than 3 charecters'
+                                        : val.length <= 10
+                                            ? (setNames.contains(val)
+                                                    ? name != initialName
+                                                    : false)
+                                                ? "You already have a set called $val"
+                                                : null
+                                            : 'Set names must be less than 11 charecters',
+                                    onChanged: (val) {
+                                      setState(() => name = val);
+                                    },
+                                    decoration: InputDecoration(
+                                      suffixIcon: Icon(Icons.edit),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      labelText: 'Name',
+                                    ),
                                   ),
                                 ),
-                                Spacer(),
-                                FloatingActionButton(
-                                  heroTag: AuthService().heroTagGenerator(),
-                                  backgroundColor: color1[300],
-                                  child: Text(
-                                    emoji,
-                                    style: TextStyle(fontSize: 24),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 5,
+                                    right: 5,
+                                    bottom: 12.0,
                                   ),
-                                  onPressed: () async {
-                                    await EmojiSelector(
-                                      context: context,
-                                    ).openSelector(changeEmoji);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              left: 5,
-                              right: 5,
-                              bottom: 8.0,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  "Color: ",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Spacer(),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: 5,
-                              right: 5,
-                              bottom: 12,
-                            ),
-                            child: SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.85,
-                              child: Padding(
-                                padding: EdgeInsets.only(
-                                  left: 5,
-                                  right: 5,
-                                  bottom: 12,
-                                ),
-                                child: Column(
-                                  children: [
-                                    Card(
-                                      child: SizedBox(
-                                        width: double.infinity,
-                                        child: Builder(
-                                          builder: (context) {
-                                            return SizedBox(
-                                              width: 200,
-                                              height: 70,
-                                              child: Center(
-                                                child: ListView(
-                                                  shrinkWrap: true,
-                                                  scrollDirection:
-                                                      Axis.horizontal,
-                                                  padding: EdgeInsets.only(
-                                                    left: 4,
-                                                    right: 4,
-                                                  ),
-                                                  children: ColorsService()
-                                                      .colorsList(
-                                                    bgColorClr,
-                                                    bgColorStr,
-                                                    (int i) {
-                                                      setState(
-                                                        () {
-                                                          bgColor = ColorsService()
-                                                              .colors[i]
-                                                                  ['color'][
-                                                                  bgColorStr
-                                                                      .toInt()]
-                                                              .value;
-
-                                                          bgColorClr =
-                                                              ColorsService()
-                                                                  .intToColorData(
-                                                            bgColor,
-                                                          )['color'];
-
-                                                          bgColorStr =
-                                                              ColorsService()
-                                                                  .intToColorData(
-                                                            bgColor,
-                                                          )['str'];
-                                                        },
-                                                      );
-                                                      //Navigator.pop(
-                                                      //context);
-                                                    },
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          },
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        "Emoji: ",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                    ),
-                                    Slider(
-                                      value: bgColorStr,
-                                      activeColor: Color(bgColor),
-                                      inactiveColor: bgColorClr[900],
-                                      min: 100,
-                                      max: 900,
-                                      divisions: 8,
-                                      label: bgColorStr.round().toString(),
-                                      onChanged: (double value) {
-                                        setState(() {
-                                          bgColor =
-                                              bgColorClr[value.toInt()].value;
-                                          bgColorStr = value;
-                                        });
-                                      },
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              left: 5,
-                              right: 5,
-                              bottom: 8.0,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  "Flashcards: ",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+                                      Spacer(),
+                                      FloatingActionButton(
+                                        heroTag:
+                                            AuthService().heroTagGenerator(),
+                                        backgroundColor: color1[300],
+                                        child: Text(
+                                          emoji,
+                                          style: TextStyle(fontSize: 24),
+                                        ),
+                                        onPressed: () async {
+                                          await EmojiSelector(
+                                            context: context,
+                                          ).openSelector(changeEmoji);
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Spacer(),
-                                FloatingActionButton(
-                                  heroTag: AuthService().heroTagGenerator(),
-                                  child: Icon(Icons.add),
-                                  backgroundColor: color1[300],
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return AddDialog(
-                                          flashCL: flashcards,
-                                          updateCards: (String v) {
-                                            setState(() {
-                                              print(flashcards);
-                                              flashcards.add(v);
-                                              print(flashcards);
-                                            });
-                                          },
-                                        );
-                                      },
-                                    );
-                                  },
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 5,
+                                    right: 5,
+                                    bottom: 8.0,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        "Color: ",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Spacer(),
+                                    ],
+                                  ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            width: constraints.maxWidth,
-                            height: (constraints.maxHeight - 395 > 70)
-                                ? constraints.maxHeight - 395
-                                : 75,
-                            child: Container(
-                              //color: Colors.amber,
-                              height: double.infinity,
-                              width: double.infinity,
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  left: 5,
-                                  right: 5,
-                                  //bottom: 2.0,
-                                  //bottom: 8.0,
-                                ),
-                                child: Builder(builder: (context) {
-                                  return Container(
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    child: Card(
-                                      child: (flashcards != null
-                                              ? flashcards.isNotEmpty
-                                              : false)
-                                          ? ReorderableListView(
-                                              children: flashcards
-                                                  .map(
-                                                    (e) => Padding(
-                                                      key: ValueKey(e),
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              1.0),
-                                                      child: Card(
-                                                        color: color1[50],
-                                                        child: ListTile(
-                                                          leading:
-                                                              Icon(Icons.menu),
-                                                          title: Text(
-                                                            e,
-                                                            style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ),
-                                                          trailing: IconButton(
-                                                              icon: Icon(
-                                                                  Icons.delete),
-                                                              onPressed: () {
-                                                                setState(
-                                                                  () {
-                                                                    flashcards
-                                                                        .removeAt(
-                                                                      flashcards
-                                                                          .indexOf(
-                                                                              e),
-                                                                    );
-                                                                  },
-                                                                );
-                                                              }),
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    left: 5,
+                                    right: 5,
+                                    bottom: 12,
+                                  ),
+                                  child: SizedBox(
+                                    width: MediaQuery.of(context).size.width *
+                                        0.85,
+                                    child: Padding(
+                                      padding: EdgeInsets.only(
+                                        left: 5,
+                                        right: 5,
+                                        bottom: 12,
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Card(
+                                            child: SizedBox(
+                                              width: double.infinity,
+                                              child: Builder(
+                                                builder: (context) {
+                                                  return SizedBox(
+                                                    width: 200,
+                                                    height: 70,
+                                                    child: Center(
+                                                      child: ListView(
+                                                        shrinkWrap: true,
+                                                        scrollDirection:
+                                                            Axis.horizontal,
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                          left: 4,
+                                                          right: 4,
+                                                        ),
+                                                        children:
+                                                            ColorsService()
+                                                                .colorsList(
+                                                          bgColorClr,
+                                                          bgColorStr,
+                                                          (int i) {
+                                                            setState(
+                                                              () {
+                                                                bgColor = ColorsService()
+                                                                    .colors[i][
+                                                                        'color']
+                                                                        [
+                                                                        bgColorStr
+                                                                            .toInt()]
+                                                                    .value;
+
+                                                                bgColorClr =
+                                                                    ColorsService()
+                                                                        .intToColorData(
+                                                                  bgColor,
+                                                                )['color'];
+
+                                                                bgColorStr =
+                                                                    ColorsService()
+                                                                        .intToColorData(
+                                                                  bgColor,
+                                                                )['str'];
+                                                              },
+                                                            );
+                                                            //Navigator.pop(
+                                                            //context);
+                                                          },
                                                         ),
                                                       ),
                                                     ),
-                                                  )
-                                                  .toList(),
-                                              onReorder: (
-                                                oldIndex,
-                                                newIndex,
-                                              ) {
-                                                setState(() {
-                                                  print(flashcards.length);
-                                                  print(newIndex);
-                                                  print(oldIndex);
-                                                  if (newIndex ==
-                                                      flashcards.length) {
-                                                    flashcards.add(
-                                                      flashcards
-                                                          .removeAt(oldIndex),
-                                                    );
-                                                  } else {
-                                                    flashcards.insert(
-                                                      newIndex,
-                                                      flashcards
-                                                          .removeAt(oldIndex),
-                                                    );
-                                                  }
-                                                });
-                                              },
-                                            )
-                                          : Center(
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(10.0),
-                                                child: Text(
-                                                  "Press the + buttton to add flashcards to your set",
-                                                ),
+                                                  );
+                                                },
                                               ),
                                             ),
+                                          ),
+                                          Slider(
+                                            value: bgColorStr,
+                                            activeColor: Color(bgColor),
+                                            inactiveColor: bgColorClr[900],
+                                            min: 100,
+                                            max: 900,
+                                            divisions: 8,
+                                            label:
+                                                bgColorStr.round().toString(),
+                                            onChanged: (double value) {
+                                              setState(() {
+                                                bgColor =
+                                                    bgColorClr[value.toInt()]
+                                                        .value;
+                                                bgColorStr = value;
+                                              });
+                                            },
+                                          )
+                                        ],
+                                      ),
                                     ),
-                                  );
-                                }),
-                              ),
-                            ),
-                          )
-                          /*
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 5,
+                                    right: 5,
+                                    bottom: 8.0,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        "Flashcards: ",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Spacer(),
+                                      FloatingActionButton(
+                                        heroTag:
+                                            AuthService().heroTagGenerator(),
+                                        child: Icon(Icons.add),
+                                        backgroundColor: color1[300],
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AddDialog(
+                                                flashCL: flashcards,
+                                                updateCards: (String v) {
+                                                  setState(() {
+                                                    print(flashcards);
+                                                    flashcards.add(v);
+                                                    print(flashcards);
+                                                  });
+                                                },
+                                              );
+                                            },
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: constraints.maxWidth,
+                                  height: (constraints.maxHeight - 395 > 70)
+                                      ? constraints.maxHeight - 395
+                                      : 75,
+                                  child: Container(
+                                    //color: Colors.amber,
+                                    height: double.infinity,
+                                    width: double.infinity,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 5,
+                                        right: 5,
+                                        //bottom: 2.0,
+                                        //bottom: 8.0,
+                                      ),
+                                      child: Builder(builder: (context) {
+                                        return Container(
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          child: Card(
+                                            child: (flashcards != null
+                                                    ? flashcards.isNotEmpty
+                                                    : false)
+                                                ? ReorderableListView(
+                                                    children: flashcards
+                                                        .map(
+                                                          (e) => Padding(
+                                                            key: ValueKey(e),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(1.0),
+                                                            child: Card(
+                                                              color: color1[50],
+                                                              child: ListTile(
+                                                                leading: Icon(
+                                                                    Icons.menu),
+                                                                title: Text(
+                                                                  e,
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
+                                                                trailing:
+                                                                    IconButton(
+                                                                        icon: Icon(Icons
+                                                                            .delete),
+                                                                        onPressed:
+                                                                            () {
+                                                                          setState(
+                                                                            () {
+                                                                              flashcards.removeAt(
+                                                                                flashcards.indexOf(e),
+                                                                              );
+                                                                            },
+                                                                          );
+                                                                        }),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                    onReorder: (
+                                                      oldIndex,
+                                                      newIndex,
+                                                    ) {
+                                                      setState(() {
+                                                        print(
+                                                            flashcards.length);
+                                                        print(newIndex);
+                                                        print(oldIndex);
+                                                        if (newIndex ==
+                                                            flashcards.length) {
+                                                          flashcards.add(
+                                                            flashcards.removeAt(
+                                                                oldIndex),
+                                                          );
+                                                        } else {
+                                                          flashcards.insert(
+                                                            newIndex,
+                                                            flashcards.removeAt(
+                                                                oldIndex),
+                                                          );
+                                                        }
+                                                      });
+                                                    },
+                                                  )
+                                                : Center(
+                                                    child: Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              10.0),
+                                                      child: Text(
+                                                        "Press the + buttton to add flashcards to your set",
+                                                      ),
+                                                    ),
+                                                  ),
+                                          ),
+                                        );
+                                      }),
+                                    ),
+                                  ),
+                                )
+                                /*
                     Padding(
                       padding: const EdgeInsets.only(
                         left: 5,
@@ -839,27 +949,27 @@ class _EditPageState extends State<_EditPage> {
                         );
                       }),
                     ),*/
-                        ]
-                      : flashcards
-                          .map(
-                            (e) => Padding(
-                              padding: EdgeInsets.all(2),
-                              child: Card(
-                                color: color1[50],
-                                child: ListTile(
-                                  title: Text(
-                                    e,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
+                              ]
+                            : flashcards
+                                .map(
+                                  (e) => Padding(
+                                    padding: EdgeInsets.all(2),
+                                    child: Card(
+                                      color: color1[50],
+                                      child: ListTile(
+                                        title: Text(
+                                          e,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                ),
+                                )
+                                .toList(),
+                      ),
               );
             }),
           ),
@@ -901,7 +1011,11 @@ class _AddDialogState extends State<AddDialog> {
               ? 'This field can\'t be empty'
               : ((flashCL != null) ? flashCL.contains(val) : false)
                   ? "This Card is already in the set"
-                  : null,
+                  : (val.length >= 16)
+                      ? "Flashcards can't be more than 16 charecters long"
+                      : (val.contains(" "))
+                          ? "Flashcards can't be longer than one word or contain spaces"
+                          : null,
           onChanged: (val) {
             setState(() => cardName = val);
           },

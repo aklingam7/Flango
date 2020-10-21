@@ -18,6 +18,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'
 
 import 'package:flango/services/auth.dart';
 import 'package:flango/services/database.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 FirebaseAnalytics analytics;
 
@@ -405,7 +406,8 @@ class _AppWrapperState extends State<AppWrapper> {
                             unFDocsList = flashcardSetList.docs;
                             //List<QueryDocumentSnapshot> docsList = [];
                             for (var indDocument in unFDocsList) {
-                              if (indDocument.data()['test'] != 'test') {
+                              if (indDocument.id !=
+                                  'userCollectionInitialDocument') {
                                 docsList.add(indDocument);
                               }
                             }
@@ -626,22 +628,117 @@ class _AppWrapperState extends State<AppWrapper> {
                       ),
                       LayoutBuilder(
                         builder: (context, constraints) {
-                          return Container(
-                            height: constraints.maxHeight,
-                            width: constraints.maxWidth,
-                            child: Center(
+                          return Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.all(15.0),
                               child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.directions_bike),
-                                  FlatButton(
+                                  Card(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15.0),
+                                      side: BorderSide(
+                                        width: 2,
+                                        color: color1[300],
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 15.0,
+                                        right: 15.0,
+                                        bottom: 15.0,
+                                        top: 8,
+                                      ),
+                                      child: Column(
+                                        //mainAxisAlignment: MainAxisAlignment.center,
+                                        //crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 8.0),
+                                            child: FlatButton.icon(
+                                                onPressed: null,
+                                                icon: Icon(Icons.settings),
+                                                label: Center(
+                                                  child: Text(
+                                                    "Settings:",
+                                                    style:
+                                                        TextStyle(fontSize: 18),
+                                                  ),
+                                                )),
+                                          ),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              FloatingActionButton.extended(
+                                                heroTag: AuthService()
+                                                    .heroTagGenerator(),
+                                                backgroundColor: color1[300],
+                                                onPressed: () async {
+                                                  await showDialog(
+                                                      context: context,
+                                                      builder: (context) =>
+                                                          WelcomeDialog(
+                                                              uid: currentUser
+                                                                  .uid));
+                                                },
+                                                label: Text("Change Language"),
+                                                icon: Icon(Icons.language),
+                                              ),
+                                              SizedBox(
+                                                width: 10,
+                                              ),
+                                              FloatingActionButton.extended(
+                                                heroTag: AuthService()
+                                                    .heroTagGenerator(),
+                                                backgroundColor: color1[300],
+                                                onPressed: () async {
+                                                  setState(
+                                                      () => loading = true);
+                                                  await _auth.signOut();
+                                                  setState(
+                                                      () => loading = false);
+                                                },
+                                                label: Text("Sign Out"),
+                                                icon: Icon(Icons.exit_to_app),
+                                              )
+                                            ],
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Spacer(),
+                                  FloatingActionButton.extended(
+                                    heroTag: AuthService().heroTagGenerator(),
+                                    backgroundColor: color1[300],
                                     onPressed: () async {
-                                      setState(() => loading = true);
-                                      await _auth.signOut();
-                                      setState(() => loading = false);
+                                      await launch(
+                                          'https://github.com/aklingam7/Flango');
                                     },
-                                    child: Text("Sign Out"),
+                                    label: Text("Github Repo"),
+                                    icon: Icon(const IconData(0xf308,
+                                        fontFamily: 'MyFlutterApp',
+                                        fontPackage: null)),
+                                  ),
+                                  SizedBox(
+                                    height: 10,
+                                  ),
+                                  FloatingActionButton.extended(
+                                    heroTag: AuthService().heroTagGenerator(),
+                                    backgroundColor: color1[300],
+                                    onPressed: () async {
+                                      showAboutDialog(
+                                          context: context,
+                                          applicationVersion: '1.0.2',
+                                          applicationIcon: Image.asset(
+                                            'assets/icons/high-res.png',
+                                            width: 40,
+                                            height: 40,
+                                          ));
+                                    },
+                                    label: Text("Additional Info"),
+                                    icon: Icon(Icons.info),
                                   )
                                 ],
                               ),

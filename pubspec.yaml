@@ -52,7 +52,9 @@ dependencies:
   shared_preferences: ^0.5.12
   flutter_spinkit: "^4.1.2"
   connectivity: ^0.4.9+5
+  url_launcher: ^5.7.5
   provider: ^4.3.2+2
+  translator: ^0.1.5
 
 dev_dependencies:
   flutter_test:
@@ -109,9 +111,9 @@ flutter:
         - asset: assets/icon_fonts/FacebookIcon.ttf
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
-    #- family: fontello
-    #  fonts:
-    #    - asset: assets/icon_fonts/BoxIcon.ttf
+    - family: MyFlutterApp
+      fonts:
+        - asset: assets/icon_fonts/GithubIcon.ttf
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

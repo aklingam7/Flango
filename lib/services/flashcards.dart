@@ -1,27 +1,31 @@
+import 'dart:math';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flango/services/database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:translator/translator.dart';
 
 import '../main.dart';
 
 class FlashcardsService {
-  Widget startDialog(BuildContext psdContext) =>
-      _StartDialog(psdContext: psdContext);
+  Widget startDialog(Map pmMap) => _StartDialog(pmMap: pmMap);
 }
 
 class _StartDialog extends StatefulWidget {
-  final BuildContext psdContext;
-  _StartDialog({Key key, this.psdContext}) : super(key: key);
+  final Map pmMap;
+  _StartDialog({Key key, this.pmMap}) : super(key: key);
 
   @override
-  _StartDialogState createState() => _StartDialogState(psdContext);
+  _StartDialogState createState() => _StartDialogState(pmMap);
 }
 
 class _StartDialogState extends State<_StartDialog> {
   List<bool> isSelected = [true, false, false];
-  BuildContext psdContext;
+  Map pmMap;
 
-  _StartDialogState(BuildContext psdContext) {
-    this.psdContext = psdContext;
+  _StartDialogState(Map pmMap) {
+    this.pmMap = pmMap;
   }
 
   @override
@@ -88,7 +92,7 @@ class _StartDialogState extends State<_StartDialog> {
                       bottom: 8,
                     ),
                     child: Text(
-                      "T/F Test: ",
+                      "MCQ Test: ",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -102,7 +106,7 @@ class _StartDialogState extends State<_StartDialog> {
                       bottom: 14,
                     ),
                     child: Text(
-                      "Select whether the translation for each card is true or false for a score at the end.",
+                      "Select correct the translation for each card out of four options for a score at the end.",
                       style: TextStyle(fontSize: 16),
                     ),
                   ),
@@ -122,7 +126,7 @@ class _StartDialogState extends State<_StartDialog> {
                       bottom: 8,
                     ),
                     child: Text(
-                      "MCQ Test: ",
+                      "Fill In Test: ",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -136,7 +140,7 @@ class _StartDialogState extends State<_StartDialog> {
                       bottom: 14,
                     ),
                     child: Text(
-                      "Select correct the translation for each card out of four options for a score at the end.",
+                      "Fill in the translations for each card for a score at the end.",
                       style: TextStyle(fontSize: 16),
                     ),
                   ),
@@ -166,37 +170,30 @@ class _StartDialogState extends State<_StartDialog> {
         FlatButton(
           child: Text("Okay"),
           onPressed: () {
-            int cMode = (isSelected ==
-                    [
-                      true,
-                      false,
-                      false,
-                    ])
+            print("pls: $isSelected");
+            int cMode = (isSelected[0] == true)
                 ? 1
-                : (isSelected ==
-                        [
-                          false,
-                          true,
-                          false,
-                        ])
+                : (isSelected[1] == true)
                     ? 2
-                    : (isSelected ==
-                            [
-                              false,
-                              true,
-                              false,
-                            ])
+                    : (isSelected[2] == true)
                         ? 3
                         : 4;
-            Navigator.push(
-              psdContext,
+            print(
+                "rehergherserhsdrhsdthdsfshbsdfhgsyhe56hgresghserhesrhgserhs");
+            print(pmMap['context']);
+            Navigator.of(context).pop((cMode == null) ? 5 : cMode);
+
+            /*Navigator.of(
+              pmMap['context'],
+            ).push(
               MaterialPageRoute(
                 builder: (context) {
-                  return _CardPage(cMode);
+                  print(
+                      "rehergherserhsdrhsdthdsfshbsdfhgsyhe56hgresghserhesrhgserhss");
+                  return _CardPage(cMode, pmMap);
                 },
               ),
-            );
-            Navigator.of(context).pop();
+            );*/
           },
         ),
       ],
@@ -205,48 +202,223 @@ class _StartDialogState extends State<_StartDialog> {
 }
 
 // ignore: must_be_immutable
-class _CardPage extends StatefulWidget {
+class CardPage extends StatefulWidget {
   int cMode;
-  _CardPage(int cMode, {Key key}) : super(key: key) {
+  Map pmMap;
+  CardPage(int cMode, Map pmMap, {Key key}) : super(key: key) {
     this.cMode = cMode;
+    this.pmMap = pmMap;
     assert(cMode == 1 || cMode == 2 || cMode == 3);
+    assert(pmMap['name'] != null);
   }
 
   @override
-  _CardPageState createState() => _CardPageState(cMode: cMode);
+  _CardPageState createState() => _CardPageState(cMode: cMode, pmMap: pmMap);
 }
 
-class _CardPageState extends State<_CardPage> {
+class _CardPageState extends State<CardPage> {
   final int cMode;
+  final Map pmMap;
+  final translator = GoogleTranslator();
 
-  _CardPageState({this.cMode});
+  Future<List<String>> fBuilder;
+
+  int taps = 0;
+  int score = 0;
+
+  _CardPageState({
+    this.cMode,
+    this.pmMap,
+  }) {
+    print(pmMap['flashcards']);
+    fBuilder = updatePracticeList(pmMap['flashcards']);
+  }
+
+  Future<List<String>> updatePracticeList(List<String> ix) async {
+    List<String> cardList = [];
+    String xy = (await (pmMap['uc'] as CollectionReference)
+            .doc('userCollectionInitialDocument')
+            .get())
+        .data()['lang'];
+    print(xy);
+    print('fs');
+    await () async {
+      for (var item in ix) {
+        print('fs');
+        var trR = await translator.translate(item, from: 'en', to: xy);
+        cardList.add(item);
+        cardList.add(trR.toString());
+      }
+    }();
+    return cardList;
+  }
+
+  Future<List<Text Function(double)>> updateMCQList() async {
+    //var fCardList = [];
+    //var qCardList = [];
+    //var a1CardList = [];
+    //var a2CardList = [];
+    var fList = [];
+    for (var item in pmMap['flashcards']) {
+      var trR = await translator.translate(item,
+          from: 'en',
+          to: (await (pmMap['uc'] as CollectionReference)
+                  .doc('userCollectionInitialDocument')
+                  .get())
+              .data()['lang']);
+      var isTrue = Random().nextInt(100) < 50;
+      Align(
+        alignment: Alignment.topCenter,
+        child: Column(),
+      );
+    }
+    return [
+      ...fList
+      //fCardList,
+      //qCardList,
+      //a1CardList,
+      //a2CardList,
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: (cMode == 1)
-          ? true
-          : showDialog(
-                context: context,
-                builder: (context) => new AlertDialog(
-                  title: Text('Confirmation: '),
-                  content: Text(
-                      'Are you sure you want to exit. Your progress will be lost.'),
-                  actions: <Widget>[
-                    FlatButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: Text("No"),
+        onWillPop: () async {
+          return (cMode == 1)
+              ? true
+              : await showDialog(
+                    context: context,
+                    builder: (context) => new AlertDialog(
+                      title: Text('Confirmation: '),
+                      content: Text(
+                          'Are you sure you want to exit. Your progress will be lost.'),
+                      actions: <Widget>[
+                        FlatButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: Text("No"),
+                        ),
+                        //SizedBox(height: 16),
+                        FlatButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: Text("Yes"),
+                        ),
+                      ],
                     ),
-                    //SizedBox(height: 16),
-                    FlatButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: Text("Yes"),
-                    ),
+                  ) ??
+                  false;
+        },
+        child: Scaffold(
+          appBar: (cMode == 1)
+              ? AppBar(
+                  centerTitle: true,
+                  title: Text("Practice"),
+                )
+              : AppBar(
+                  automaticallyImplyLeading: false,
+                  centerTitle: true,
+                  actions: [
+                    IconButton(
+                        icon: Icon(Icons.exit_to_app),
+                        onPressed: () async {
+                          var y = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text('Confirmation: '),
+                              content: Text(
+                                  'Are you sure you want to exit. Your progress will be lost.'),
+                              actions: <Widget>[
+                                FlatButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(false),
+                                  child: Text("No"),
+                                ),
+                                //SizedBox(height: 16),
+                                FlatButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(true),
+                                  child: Text("Yes"),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (y) {
+                            Navigator.pop(context);
+                          }
+                        })
                   ],
+                  title: Text("${(cMode == 2) ? "Test" : "Test"}"),
                 ),
-              ) ??
-              false,
-      child: null,
-    );
+          body: (cMode == 1)
+              ? FutureBuilder<List<String>>(
+                  //initialData: null,
+                  future: updatePracticeList(pmMap['flashcards']),
+                  builder: (context, snapshot) {
+                    print(snapshot.connectionState);
+                    //print(snapshot.data.length);
+                    if (snapshot.data != null
+                        ? snapshot.data.length == pmMap['flashcards'].length * 2
+                        : false) {
+                      /*if (snapshot.hasError) {
+                        return Align(
+                          alignment: Alignment.center,
+                          child: Padding(
+                            padding: const EdgeInsets.all(14.0),
+                            child: Text(
+                              "An error occured. Please kill the app and try again.",
+                              style: TextStyle(fontSize: 22),
+                            ),
+                          ),
+                        );
+                      }*/
+                      return Align(
+                        alignment: Alignment.center,
+                        child: Padding(
+                          padding: EdgeInsets.all(30),
+                          child: AspectRatio(
+                            aspectRatio: 3 / 2,
+                            child: GestureDetector(
+                              onTap: () => setState(() {
+                                if (taps + 1 != snapshot.data.length) {
+                                  taps = taps + 1;
+                                } else {
+                                  taps = 0;
+                                }
+                              }),
+                              child: Card(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15.0),
+                                  side: BorderSide(
+                                    width: 2,
+                                    color: color1[300],
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      return Center(
+                                        child: Text(
+                                          snapshot.data[taps],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    } else {
+                      return Align(
+                          alignment: Alignment.center,
+                          child: CircularProgressIndicator());
+                    }
+                  })
+              : (cMode == 2)
+                  ? null
+                  : null,
+        ));
   }
 }
